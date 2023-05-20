@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <RGBmatrixPanel.h>
 
+#define SCREEN_W 64
+
 #define CLK 11 // USE THIS ON ARDUINO MEGA
 #define OE 9
 #define LAT 10

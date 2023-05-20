@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "system.h"
 #include "movingPixel.h"
+#include "phases.h"
 
 #define MAX_APPLETS 16
 
@@ -49,9 +50,9 @@ void initializeApplets()
 
 	// Set up the second applet
 	static AppletEntry applet2;
-	strncpy(applet2.name, "Applet 2", sizeof(applet2.name) - 1);
-	applet2.appletSetup = &doNothing;
-	applet2.appletLoop = &doNothing;
+	strncpy(applet2.name, "Phases", sizeof(applet2.name) - 1);
+	applet2.appletSetup = &phasesSetup;
+	applet2.appletLoop = &phasesLoop;
 	applets[numApplets++] = applet2;
 
 	// ... Add more applets if needed
