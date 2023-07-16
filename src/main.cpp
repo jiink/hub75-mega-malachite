@@ -105,8 +105,8 @@ void menuLoop()
 
 void setup()
 {
-	pinMode(ROTARY_CLK, INPUT);
-	pinMode(ROTARY_DT, INPUT);
+	pinMode(ROTARY_CLK, INPUT_PULLUP);
+	pinMode(ROTARY_DT, INPUT_PULLUP);
 	pinMode(ROTARY_SW, INPUT_PULLUP);
 
 	attachInterrupt(digitalPinToInterrupt(ROTARY_CLK), rotaryEncoderInterrupt, RISING);
