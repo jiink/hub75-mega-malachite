@@ -2,9 +2,14 @@
 #define SYSTEM_H
 
 #include <Arduino.h>
-#include <RGBmatrixPanel.h>
+#include "xtensa/core-macros.h"
+#include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
+#include <FastLED.h>
 
-#define SCREEN_W 64
+#define PANEL_WIDTH 64
+#define PANEL_HEIGHT 32
+#define PANELS_NUMBER 1
+#define SCREEN_W PANEL_WIDTH
 
 #define CLK 11 // USE THIS ON ARDUINO MEGA
 #define OE 9
@@ -19,7 +24,7 @@
 #define ROTARY_DT 53
 #define ROTARY_SW 21
 
-extern RGBmatrixPanel matrix;
+extern MatrixPanel_I2S_DMA* matrix;
 
 extern volatile bool buttonPressed;
 extern volatile int rotationInput; // Negative is CCW, positive is CW. Resets to 0 when input consumed.

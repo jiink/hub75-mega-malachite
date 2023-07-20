@@ -3,7 +3,7 @@
 #include "system.h"
 #include "movingPixel.h"
 
-uint16_t movingPixelColor = matrix.Color333(7, 7, 7);
+uint16_t movingPixelColor = matrix->color333(7, 7, 7);
 
 float direction = 0.0f;
 float speed = 1.0f;
@@ -56,7 +56,7 @@ PanelColor PanelColorMultiply(PanelColor color, float value)
 uint16_t PanelColor333(PanelColor panelColor)
 {
 	// uint8_t mask = (1 << (8 - PanelColorDepth)) - 1;
-	return matrix.Color333(panelColor.r / 32, panelColor.g / 32, panelColor.b / 32);
+	return matrix->color333(panelColor.r / 32, panelColor.g / 32, panelColor.b / 32);
 }
 
 // Draws a point on the screen at a sub-pixel level, unlike DrawPixel.
@@ -91,16 +91,16 @@ void DrawPoint(Vector2 position, PanelColor color)
 	// FrameBufferAddPixV(pixelCornerTopRight, colorTopRight);
 	// FrameBufferAddPixV(pixelCornerBottomLeft, colorBottomLeft);
 	// FrameBufferAddPixV(pixelCornerBottomRight, colorBottomRight);
-	matrix.drawPixel(pixelCornerTopLeft.x, pixelCornerTopLeft.y, PanelColor333(colorTopLeft));
-	matrix.drawPixel(pixelCornerTopRight.x, pixelCornerTopRight.y, PanelColor333(colorTopRight));
-	matrix.drawPixel(pixelCornerBottomLeft.x, pixelCornerBottomLeft.y, PanelColor333(colorBottomLeft));
-	matrix.drawPixel(pixelCornerBottomRight.x, pixelCornerBottomRight.y, PanelColor333(colorBottomRight));
+	matrix->drawPixel(pixelCornerTopLeft.x, pixelCornerTopLeft.y, PanelColor333(colorTopLeft));
+	matrix->drawPixel(pixelCornerTopRight.x, pixelCornerTopRight.y, PanelColor333(colorTopRight));
+	matrix->drawPixel(pixelCornerBottomLeft.x, pixelCornerBottomLeft.y, PanelColor333(colorBottomLeft));
+	matrix->drawPixel(pixelCornerBottomRight.x, pixelCornerBottomRight.y, PanelColor333(colorBottomRight));
 }
 
 
 void movingPixelSetup(void)
 {
-	movingPixelColor = matrix.Color333(7, 6, 0);
+	movingPixelColor = matrix->color333(7, 6, 0);
 }
 
 void updateDirection(){
@@ -127,17 +127,17 @@ void updateDirection(){
 	// Wrap around
 	if (x < 0.0f)
 	{
-		x = (float)matrix.width();
+		x = (float)matrix->width();
 	}
-	else if (x > (float)matrix.width())
+	else if (x > (float)matrix->width())
 	{
 		x = 0.0f;
 	}
 	if (y < 0.0f)
 	{
-		y = (float)matrix.height();
+		y = (float)matrix->height();
 	}
-	else if (y > (float)matrix.height())
+	else if (y > (float)matrix->height())
 	{
 		y = 0.0f;
 	}
@@ -145,11 +145,12 @@ void updateDirection(){
 
 void movingPixelLoop(void)
 {
-	matrix.fillScreen(matrix.Color333(0, 0, 0));
+	matrix->fillScreen(matrix->color333(0, 0, 0));
 
 	updateDirection();
 
 	DrawPoint({x, y}, {255, 255, 0});
 
-	matrix.swapBuffers(true);
+	//matrix->swapBuffers(true);
+    matrix->flipDMABuffer();
 }

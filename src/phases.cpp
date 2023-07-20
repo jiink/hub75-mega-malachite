@@ -1,12 +1,12 @@
 #include <math.h>
 #include "system.h"
 
-float time = 0.0f;
+float pTime = 0.0f;
 float timeScale = 0.2f;
 
 int moonSize = 12; //Radius of moon in pixels
-uint16_t moonColor = matrix.Color333(2, 5, 7);
-uint16_t bgColor = matrix.Color333(0, 0, 0);
+uint16_t moonColor = matrix->color333(2, 5, 7);
+uint16_t bgColor = matrix->color333(0, 0, 0);
 
 int midX;
 int midY;
@@ -22,7 +22,7 @@ void fillEllipse (int originX, int originY, uint32_t width, uint32_t height, uin
 
     // do the horizontal diameter
     for (long long x = -width; x <= width; x++)
-        matrix.drawPixel(originX + x, originY, color);
+        matrix->drawPixel(originX + x, originY, color);
 
     // now do both halves at the same time, away from the diameter
     for (long long y = 1; y <= height; y++)
@@ -36,8 +36,8 @@ void fillEllipse (int originX, int originY, uint32_t width, uint32_t height, uin
 
         for (long long x = -x0; x <= x0; x++)
         {
-            matrix.drawPixel(originX + x, originY - y, color);
-            matrix.drawPixel(originX + x, originY + y, color);
+            matrix->drawPixel(originX + x, originY - y, color);
+            matrix->drawPixel(originX + x, originY + y, color);
         }
     }
 }
@@ -50,10 +50,10 @@ void drawEllipse (int x, int y, uint8_t width, uint8_t height, uint8_t on)
     long dy = x1 * x1, err = dx + dy; // error of 1 step
 
     do {
-        matrix.drawPixel(x - x1, y + y1, on); // I Quadrant
-        matrix.drawPixel(x + x1, y + y1, on); // II Quadrant
-        matrix.drawPixel(x + x1, y - y1, on); // III Quadrant
-        matrix.drawPixel(x - x1, y - y1, on); // IV Quadrant
+        matrix->drawPixel(x - x1, y + y1, on); // I Quadrant
+        matrix->drawPixel(x + x1, y + y1, on); // II Quadrant
+        matrix->drawPixel(x + x1, y - y1, on); // III Quadrant
+        matrix->drawPixel(x - x1, y - y1, on); // IV Quadrant
         e2 = 2 * err;
 
         if (e2 >= dx) {
@@ -68,28 +68,28 @@ void drawEllipse (int x, int y, uint8_t width, uint8_t height, uint8_t on)
     } while (x1 <= 0);
 
     while (y1++ < height) { // too early stop for flat ellipses with width=1
-        matrix.drawPixel(x, y + y1, on); // -> finish tip of ellipse
-        matrix.drawPixel(x, y - y1, on);
+        matrix->drawPixel(x, y + y1, on); // -> finish tip of ellipse
+        matrix->drawPixel(x, y - y1, on);
     }
 }
 
 
 void phasesSetup()
 {
-    midX = matrix.width() / 2;
-    midY = matrix.height() / 2;
+    midX = matrix->width() / 2;
+    midY = matrix->height() / 2;
 }
 
 
 void phasesLoop()
 {
-    matrix.fillScreen(matrix.Color333(0, 0, 0));
-    time = (float)millis() / 1000.0f * timeScale;
+    matrix->fillScreen(matrix->color333(0, 0, 0));
+    pTime = (float)millis() / 1000.0f * timeScale;
 
-    matrix.fillCircle(midX, midY, moonSize, moonColor);
+    matrix->fillCircle(midX, midY, moonSize, moonColor);
 
     uint16_t centerColor;
-    if (((int)(time - 0.5) % 2))
+    if (((int)(pTime - 0.5) % 2))
     {
         centerColor = bgColor;
     }
@@ -98,8 +98,8 @@ void phasesLoop()
         centerColor = moonColor;
     }
 
-    matrix.fillRect(
-        ((int)time % 2) * moonSize + (midX - moonSize),
+    matrix->fillRect(
+        ((int)pTime % 2) * moonSize + (midX - moonSize),
         midY - moonSize,
         moonSize + 1,
         2 * moonSize + 1,
@@ -107,8 +107,9 @@ void phasesLoop()
     );
 
 
-    fillEllipse(midX, midY, moonSize * abs(cos(PI * time)) + 1, moonSize + 1, centerColor);
+    fillEllipse(midX, midY, moonSize * abs(cos(PI * pTime)) + 1, moonSize + 1, centerColor);
     
 
-    matrix.swapBuffers(true);
+    //matrix->swapBuffers(true);
+    matrix->flipDMABuffer();
 }

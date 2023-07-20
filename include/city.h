@@ -1,5 +1,5 @@
-#include <avr/pgmspace.h>
-
+#include <stdint.h>
+#include <pgmspace.h>
 #ifndef CITY_H
 #define CITY_H
 
