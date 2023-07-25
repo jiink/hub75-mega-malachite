@@ -23,6 +23,7 @@
 #define OE 15
 */
 
+
 #define MAX_APPLETS 16
 
 // Prototypes
@@ -81,7 +82,8 @@ void initializeApplets()
 	// ... Add more applets if needed
 }
 
-uint8_t incrementWrap(uint8_t num, uint8_t max, uint8_t incr)
+//  TODO: FIX THIS!!
+int incrementWrap(int num, int max, int incr)
 {
 	int work = num;
 	work += incr;
@@ -93,7 +95,7 @@ uint8_t incrementWrap(uint8_t num, uint8_t max, uint8_t incr)
 	{
 		work = 0;
 	}
-	return (uint8_t)work;
+	return (int)work;
 }
 
 void menuLoop()
@@ -106,15 +108,20 @@ void menuLoop()
 	{
 		rotationInput = 0;
 		appletSelectedIndex = incrementWrap(appletSelectedIndex, numApplets - 1, 1);
+        //Serial.println("P");
+        Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
 	else if (rotationInput < 0)
 	{
 		rotationInput = 0;
 		appletSelectedIndex = incrementWrap(appletSelectedIndex, numApplets - 1, -1);
+        //Serial.println("N");
+        Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
 
 	if (buttonPressed)
 	{
+        Serial.printf("Button pressed!\r\n");
 		buttonPressed = false;
 		state = APPLET;
 		applets[appletSelectedIndex].appletSetup();
@@ -129,6 +136,8 @@ void menuLoop()
     matrix->flipDMABuffer(); 
 }
 
+
+
 void setup()
 {
     // TODO: Choose pins and solder on connector for rotary knob
@@ -138,7 +147,8 @@ void setup()
 	// attachInterrupt(digitalPinToInterrupt(ROTARY_CLK), rotaryEncoderInterrupt, RISING);
 	// attachInterrupt(digitalPinToInterrupt(ROTARY_SW), buttonInterrupt, FALLING);
 
-	Serial.begin(9600);
+	Serial.begin(115200);
+    Serial.println("Starting up...");
     HUB75_I2S_CFG mxconfig(PANEL_WIDTH, PANEL_HEIGHT, PANELS_NUMBER);
     mxconfig.double_buff = true;
     matrix = new MatrixPanel_I2S_DMA(mxconfig);
@@ -146,11 +156,21 @@ void setup()
     matrix->setBrightness8(255);
 	//matrix->setTextSize(1);
 
+    rotaryEncoder.begin();
+    rotaryEncoder.setup(readEncoderISR);
+    //set boundaries and if values should cycle or not
+    //in this example we will set possible values between 0 and 1000;
+    bool circleValues = false;
+    rotaryEncoder.setBoundaries(-1000, 1000, circleValues); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
+    //rotaryEncoder.setAcceleration(250); //or set the value - larger number = more accelearation; 0 or 1 means disabled acceleration
+    rotaryEncoder.disableAcceleration();
+
 	initializeApplets();
 }
 
 void loop()
 {
+    rotaryLoop();
 	switch (state)
 	{
 	case MENU:
@@ -166,3 +186,4 @@ void loop()
 		break;
 	}
 }
+
