@@ -25,18 +25,18 @@ void cityLoop ()
     cTime = (float)millis() / 1000.0f * timeScale;
 
     while (rotationInput != 0)
-	{
-		if (rotationInput > 0)
-		{
-			posX += moveStep;
-			rotationInput--;
-		}
-		else
-		{
-			posX -= moveStep;
-			rotationInput++;
-		}
-	}
+    {
+        if (rotationInput > 0)
+        {
+            timeScale += moveStep * 10;
+            rotationInput--;
+        }
+        else
+        {
+            timeScale -= moveStep * 10;
+            rotationInput++;
+        }
+    }
 
     matrix->fillCircle(matrix->width() / 2, matrix->height() / 2, 10, sunCol);
 

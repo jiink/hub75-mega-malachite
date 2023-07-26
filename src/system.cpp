@@ -9,24 +9,6 @@ volatile bool buttonPressed = false;
 static int lastEncoderValue = 0;
 static unsigned long lastTimePressed = 0;
 
-// Interrupts
-// void rotaryEncoderInterrupt()
-// {
-// 	if (digitalRead(ROTARY_DT))
-// 	{
-// 		rotationInput--;
-// 	}
-// 	else
-// 	{
-// 		rotationInput++;
-// 	}
-// }
-
-// void buttonInterrupt()
-// {
-// 	buttonPressed = true;
-// }
-
 void rotaryLoop()
 {
     //dont print anything unless value changed
@@ -36,7 +18,6 @@ void rotaryLoop()
         rotationInput += currentValue - lastEncoderValue;
         lastEncoderValue = currentValue;
         Serial.printf("rotationInput: %d\r\n", rotationInput);
-        rotaryEncoder.setEncoderValue(0);
     }
     if (rotaryEncoder.isEncoderButtonClicked())
     {

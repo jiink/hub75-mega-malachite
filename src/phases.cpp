@@ -86,6 +86,21 @@ void phasesLoop()
     matrix->fillScreen(matrix->color333(0, 0, 0));
     pTime = (float)millis() / 1000.0f * timeScale;
 
+    while (rotationInput != 0)
+    {
+        float timeStep = 0.05f;
+        if (rotationInput > 0)
+        {
+            timeScale += timeStep;
+            rotationInput--;
+        }
+        else
+        {
+            timeScale -= timeStep;
+            rotationInput++;
+        }
+    }
+
     matrix->fillCircle(midX, midY, moonSize, moonColor);
 
     uint16_t centerColor;

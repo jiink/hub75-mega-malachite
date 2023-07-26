@@ -82,39 +82,37 @@ void initializeApplets()
 	// ... Add more applets if needed
 }
 
-//  TODO: FIX THIS!!
-int incrementWrap(int num, int max, int incr)
-{
-	int work = num;
-	work += incr;
-	if (work < 0)
-	{
-		work = max;
-	}
-	if (work > max)
-	{
-		work = 0;
-	}
-	return (int)work;
+
+int addWrap(int num, int max, int incr) {
+    // Calculate the result after adding incr to num
+    int result = num + incr;
+
+    // Calculate the range size (max + 1) to ensure wrapping occurs in both directions
+    int rangeSize = max + 1;
+
+    // Calculate the modular arithmetic result to handle wrapping in both directions
+    // If the result is negative, add the range size to wrap around from the end to the start.
+    // If the result is greater than or equal to the range size, subtract the range size to wrap around from the start to the end.
+    result = (result % rangeSize + rangeSize) % rangeSize;
+
+    return result;
 }
 
 void menuLoop()
 {
-    //matrix->flipDMABuffer(); // Show the back buffer, set currently output buffer to the back (i.e. no longer being sent to LED panels)
-    //matrix->clearScreen();   // Now clear the back-buffer
 	matrix->fillScreen(matrix->color565(128, 0, 50));
 
 	if (rotationInput > 0)
 	{
 		rotationInput = 0;
-		appletSelectedIndex = incrementWrap(appletSelectedIndex, numApplets - 1, 1);
+		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, 1);
         //Serial.println("P");
         Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
 	else if (rotationInput < 0)
 	{
 		rotationInput = 0;
-		appletSelectedIndex = incrementWrap(appletSelectedIndex, numApplets - 1, -1);
+		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, -1);
         //Serial.println("N");
         Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
@@ -140,13 +138,6 @@ void menuLoop()
 
 void setup()
 {
-    // TODO: Choose pins and solder on connector for rotary knob
-	// pinMode(ROTARY_CLK, INPUT_PULLUP);
-	// pinMode(ROTARY_DT, INPUT_PULLUP);
-	// pinMode(ROTARY_SW, INPUT_PULLUP);
-	// attachInterrupt(digitalPinToInterrupt(ROTARY_CLK), rotaryEncoderInterrupt, RISING);
-	// attachInterrupt(digitalPinToInterrupt(ROTARY_SW), buttonInterrupt, FALLING);
-
 	Serial.begin(115200);
     Serial.println("Starting up...");
     HUB75_I2S_CFG mxconfig(PANEL_WIDTH, PANEL_HEIGHT, PANELS_NUMBER);
@@ -154,14 +145,12 @@ void setup()
     matrix = new MatrixPanel_I2S_DMA(mxconfig);
     matrix->begin();
     matrix->setBrightness8(255);
-	//matrix->setTextSize(1);
 
     rotaryEncoder.begin();
     rotaryEncoder.setup(readEncoderISR);
     //set boundaries and if values should cycle or not
-    //in this example we will set possible values between 0 and 1000;
     bool circleValues = false;
-    rotaryEncoder.setBoundaries(-1000, 1000, circleValues); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
+    rotaryEncoder.setBoundaries(-1000000, 1000000, circleValues); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
     //rotaryEncoder.setAcceleration(250); //or set the value - larger number = more accelearation; 0 or 1 means disabled acceleration
     rotaryEncoder.disableAcceleration();
 
