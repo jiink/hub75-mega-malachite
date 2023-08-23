@@ -1,9 +1,10 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include "system.h"
-#include "movingPixel.h"
-#include "phases.h"
-#include "city.h"
+#include "applets\movingPixel.h"
+#include "applets\phases.h"
+#include "applets\city.h"
+#include "applets\life.h"
 
 /*  Default library pin configuration for the reference
   you can redefine only ones you need later on object creation
@@ -78,6 +79,12 @@ void initializeApplets()
 	applet3.appletSetup = &citySetup;
 	applet3.appletLoop = &cityLoop;
 	applets[numApplets++] = applet3;
+
+	static AppletEntry applet4;
+	strncpy(applet3.name, "Life", sizeof(applet4.name) - 1);
+	applet3.appletSetup = &lifeSetup;
+	applet3.appletLoop = &lifeLoop;
+	applets[numApplets++] = applet4;
 
 	// ... Add more applets if needed
 }
