@@ -38,7 +38,7 @@ enum ProgramState
 	MENU,
 	APPLET
 };
-ProgramState state = MENU;
+ProgramState state = APPLET;
 
 struct AppletEntry
 {
@@ -49,7 +49,7 @@ struct AppletEntry
 // Array to store the available applets
 AppletEntry applets[MAX_APPLETS];
 uint8_t numApplets = 0;
-uint8_t appletSelectedIndex = 0;
+uint8_t appletSelectedIndex = 3;
 
 void doNothing()
 {
@@ -81,9 +81,9 @@ void initializeApplets()
 	applets[numApplets++] = applet3;
 
 	static AppletEntry applet4;
-	strncpy(applet3.name, "Life", sizeof(applet4.name) - 1);
-	applet3.appletSetup = &lifeSetup;
-	applet3.appletLoop = &lifeLoop;
+	strncpy(applet4.name, "Life", sizeof(applet4.name) - 1);
+	applet4.appletSetup = &lifeSetup;
+	applet4.appletLoop = &lifeLoop;
 	applets[numApplets++] = applet4;
 
 	// ... Add more applets if needed
@@ -162,6 +162,11 @@ void setup()
     rotaryEncoder.disableAcceleration();
 
 	initializeApplets();
+
+    if (state == APPLET)
+    {
+        applets[appletSelectedIndex].appletSetup();
+    }
 }
 
 void loop()
