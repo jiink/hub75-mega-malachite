@@ -25,7 +25,7 @@ struct Vector2
 	float x, y;
 };
 
-float SquareIntersectionArea(Vector2 square1, Vector2 square2)
+static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 {
 	float left = fmax(square1.x, square2.x);
 	float right = fmin(square1.x + 1, square2.x + 1);
