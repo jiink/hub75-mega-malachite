@@ -4,11 +4,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // ---- Definitions ---------------------------------------------------------------------//
 
+#define FRAMEBUF_WIDTH 64
+#define FRAMEBUF_HEIGHT 32
 #define CELL_GRID_WIDTH 4
 #define CELL_GRID_HEIGHT 2
 #define MAX_PARTICLES_PER_CELL 100
 
-#define MAX_PARTICLES 100
+#define MAX_PARTICLES 120
 #define MAX_COLOR_GROUPS 2
 
 #define FPS_REPORT_INTERVAL 1000
@@ -80,9 +82,24 @@ int fpsTimer = 0;
 const float cellSize = maxDistance * 2.0;
 // Each grid cell contains a list of particles within its bounds.
 Cell grid[CELL_GRID_HEIGHT][CELL_GRID_WIDTH];
+Color FrameBuffer[FRAMEBUF_HEIGHT][FRAMEBUF_WIDTH];
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // ---- Functions -----------------------------------------------------------------------//
+
+// If there is an overflow, return 255
+uint8_t AddClamp(uint8_t a, uint8_t b)
+{
+	uint8_t sum = a + b;
+	if (sum < a || sum < b)
+	{
+		return 255;
+	}
+	else
+	{
+		return sum;
+	}
+}
 
 Vector2 Vector2Subtract(Vector2 a, Vector2 b)
 {
@@ -166,6 +183,72 @@ uint8_t randByte(uint8_t a, uint8_t b)
     return rand() % (b - a + 1) + a;
 }
 
+Color ColorAdd(Color a, Color b)
+{
+	return {
+		AddClamp(a.r, b.r),
+		AddClamp(a.g, b.g),
+		AddClamp(a.b, b.b)};
+}
+
+Color ColorMultiply(Color color, float value)
+{
+	return {
+		(uint8_t)(color.r * value),
+		(uint8_t)(color.g * value),
+		(uint8_t)(color.b * value)};
+}
+
+
+void FrameBufferClear(Color color)
+{
+	for (int y = 0; y < FRAMEBUF_HEIGHT; y++)
+	{
+		for (int x = 0; x < FRAMEBUF_WIDTH; x++)
+		{
+			FrameBuffer[y][x] = color;
+		}
+	}
+}
+
+void FrameBufferSetPix(int x, int y, Color color)
+{
+	if (x < 0 || y < 0)
+		return;
+	if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
+		return;
+	FrameBuffer[y][x] = color;
+}
+
+void FrameBufferSetPixV(Vector2 pos, Color color)
+{
+	FrameBufferSetPix(pos.x, pos.y, color);
+}
+
+Color FrameBufferGetPix(int x, int y)
+{
+	return FrameBuffer[y][x];
+}
+
+Color FrameBufferGetPixV(Vector2 pos)
+{
+	return FrameBufferGetPix(pos.x, pos.y);
+}
+
+void FrameBufferAddPix(int x, int y, Color color)
+{
+	if (x < 0 || y < 0)
+		return;
+	if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
+		return;
+	FrameBufferSetPix(x, y, ColorAdd(FrameBufferGetPix(x, y), color));
+}
+
+void FrameBufferAddPixV(Vector2 pos, Color color)
+{
+	FrameBufferAddPix(pos.x, pos.y, color);
+}
+
 static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 {
 	float left = fmax(square1.x, square2.x);
@@ -189,14 +272,6 @@ static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 void drawPixelVColor(Vector2 position, Color color)
 {
     matrix->drawPixelRGB888((int)position.x, (int)position.y, color.r, color.g, color.b);
-}
-
-Color ColorMultiply(Color color, float value)
-{
-	return {
-		(uint8_t)(color.r * value),
-		(uint8_t)(color.g * value),
-		(uint8_t)(color.b * value)};
 }
 
 // Draws a point on the screen at a sub-pixel level, unlike DrawPixel.
@@ -227,14 +302,14 @@ void DrawPoint(Vector2 position, Color color)
 	Color colorBottomRight = ColorMultiply(color, areaBottomRight);
 
 	// Set pixels
-	// FrameBufferAddPixV(pixelCornerTopLeft, colorTopLeft);
-	// FrameBufferAddPixV(pixelCornerTopRight, colorTopRight);
-	// FrameBufferAddPixV(pixelCornerBottomLeft, colorBottomLeft);
-	// FrameBufferAddPixV(pixelCornerBottomRight, colorBottomRight);
-	drawPixelVColor(pixelCornerTopLeft, colorTopLeft);
-	drawPixelVColor(pixelCornerTopRight, colorTopRight);
-	drawPixelVColor(pixelCornerBottomLeft, colorBottomLeft);
-	drawPixelVColor(pixelCornerBottomRight, colorBottomRight);
+	FrameBufferAddPixV(pixelCornerTopLeft, colorTopLeft);
+	FrameBufferAddPixV(pixelCornerTopRight, colorTopRight);
+	FrameBufferAddPixV(pixelCornerBottomLeft, colorBottomLeft);
+	FrameBufferAddPixV(pixelCornerBottomRight, colorBottomRight);
+	// drawPixelVColor(pixelCornerTopLeft, colorTopLeft);
+	// drawPixelVColor(pixelCornerTopRight, colorTopRight);
+	// drawPixelVColor(pixelCornerBottomLeft, colorBottomLeft);
+	// drawPixelVColor(pixelCornerBottomRight, colorBottomRight);
 }
 
 void drawParticle(Particle* particle)
@@ -453,23 +528,35 @@ void lifeUpdate()
         fpsTimer = currentMillis;
         fps = 1.0f / deltaTime;
     }
-    if (buttonPressed)
+    if (rotationInput != 0)
 	{
-		buttonPressed = false;
+		rotationInput = 0;
         randomizeAttractionFactorMatrix();
 	}
     UpdateGrid();
     updateParticles();
 }
 
+void drawFrameBuffer()
+{
+    for (int y = 0; y < FRAMEBUF_HEIGHT; y++)
+    {
+        for (int x = 0; x < FRAMEBUF_WIDTH; x++)
+        {
+            matrix->drawPixelRGB888(x, y, FrameBuffer[y][x].r, FrameBuffer[y][x].g, FrameBuffer[y][x].b);
+        }
+    }
+}
+
 void lifeDraw()
 {
-    matrix->clearScreen();
+    //matrix->clearScreen();
+    FrameBufferClear((Color){0, 0, 0});
+    drawParticles();
+    drawFrameBuffer();
     matrix->setTextColor(matrix->color565(0, 255, 128));
     matrix->setCursor(0, 0);
     matrix->printf("%d", fps);
-    drawParticles();
-    //matrix->printf("%.2f", particles[MAX_PARTICLES - 1].position.x);
     matrix->flipDMABuffer();
 }
 
