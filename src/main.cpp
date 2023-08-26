@@ -152,7 +152,6 @@ void setup()
     matrix = new MatrixPanel_I2S_DMA(mxconfig);
     matrix->begin();
     matrix->setBrightness8(255);
-
     rotaryEncoder.begin();
     rotaryEncoder.setup(readEncoderISR);
     //set boundaries and if values should cycle or not
@@ -162,6 +161,10 @@ void setup()
     rotaryEncoder.disableAcceleration();
 
 	initializeApplets();
+
+    connectToWifi();
+    synchrnoizeTime();
+    Serial.println("Connected to WiFi and synchronized time.");
 
     if (state == APPLET)
     {

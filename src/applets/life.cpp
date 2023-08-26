@@ -14,6 +14,7 @@
 #define MAX_COLOR_GROUPS 2
 
 #define FPS_REPORT_INTERVAL 1000
+#define WALLCLOCK_UPDATE_INTERVAL 60 * 1000
 
 struct Vector2
 {
@@ -66,6 +67,10 @@ struct CellWrap
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // ---- Variables -----------------------------------------------------------------------//
+
+int wallclockUpdateTimer = 0;
+char dateReport[8];
+char timeReport[8];
 
 float attractionFactorMatrix[MAX_COLOR_GROUPS][MAX_COLOR_GROUPS];
 Particle particles[MAX_PARTICLES];
@@ -556,8 +561,22 @@ void lifeDraw()
     drawFrameBuffer();
     matrix->setTextColor(matrix->color565(0, 255, 128));
     matrix->setCursor(0, 0);
-    matrix->printf("%d", fps);
+    matrix->print(dateReport);
+    matrix->setCursor(0, 32 - 8);
+    matrix->print(timeReport);
     matrix->flipDMABuffer();
+}
+
+void wallclockUpdate()
+{
+    if (timerDiff(millis(), wallclockUpdateTimer) > WALLCLOCK_UPDATE_INTERVAL)
+    {
+        wallclockUpdateTimer = millis();
+        time_t now;
+        time(&now);
+        strftime(dateReport, 8, "%m/%d", localtime(&now));
+        strftime(timeReport, 8, "%I:%M", localtime(&now));
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -584,6 +603,7 @@ void lifeSetup()
 
 void lifeLoop()
 {
+    wallclockUpdate();
     lifeUpdate();
     lifeDraw();
 }
