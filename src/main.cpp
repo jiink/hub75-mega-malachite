@@ -56,36 +56,23 @@ void doNothing()
 	return;
 }
 
+void addApplet(const char* name, void (*appletSetup)(void), void (*appletLoop)(void))
+{
+    // Set up the first applet
+    static AppletEntry applet;
+    strncpy(applet.name, name, sizeof(applet.name) - 1);
+    applet.appletSetup = appletSetup;
+    applet.appletLoop = appletLoop;
+    applets[numApplets++] = applet;
+}
+
 // Declare and define a global constructor function
 void initializeApplets()
 {
-	// Set up the first applet
-	static AppletEntry applet1;
-	strncpy(applet1.name, "Moving Pixel", sizeof(applet1.name) - 1);
-	applet1.appletSetup = &movingPixelSetup;
-	applet1.appletLoop = &movingPixelLoop;
-	applets[numApplets++] = applet1;
-
-	// Set up the second applet
-	static AppletEntry applet2;
-	strncpy(applet2.name, "Phases", sizeof(applet2.name) - 1);
-	applet2.appletSetup = &phasesSetup;
-	applet2.appletLoop = &phasesLoop;
-	applets[numApplets++] = applet2;
-
-	// Set up the third applet
-	static AppletEntry applet3;
-	strncpy(applet3.name, "City", sizeof(applet3.name) - 1);
-	applet3.appletSetup = &citySetup;
-	applet3.appletLoop = &cityLoop;
-	applets[numApplets++] = applet3;
-
-	static AppletEntry applet4;
-	strncpy(applet4.name, "Life", sizeof(applet4.name) - 1);
-	applet4.appletSetup = &lifeSetup;
-	applet4.appletLoop = &lifeLoop;
-	applets[numApplets++] = applet4;
-
+    addApplet("Moving Pixel", &movingPixelSetup, &movingPixelLoop);
+    addApplet("Phases", &phasesSetup, &phasesLoop);
+    addApplet("City", &citySetup, &cityLoop);
+    addApplet("Life", &lifeSetup, &lifeLoop);
 	// ... Add more applets if needed
 }
 
