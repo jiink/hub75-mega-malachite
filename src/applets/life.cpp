@@ -1,5 +1,6 @@
 #include "life.h"
 #include "system.h"
+#include "digits.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // ---- Definitions ---------------------------------------------------------------------//
@@ -13,12 +14,21 @@
 #define MAX_PARTICLES 120
 #define MAX_COLOR_GROUPS 2
 
+#define RANDOMIZE_INTERVAL 15000
 #define FPS_REPORT_INTERVAL 1000
-#define WALLCLOCK_UPDATE_INTERVAL 60 * 1000
+#define WALLCLOCK_UPDATE_INTERVAL 1000
+#define MONTH_REPORT_SIZE 2
+#define DAY_REPORT_SIZE 2
+#define HOUR_REPORT_SIZE 2
 
 struct Vector2
 {
     float x, y;
+};
+
+struct Vector2i
+{
+    int x, y;
 };
 
 enum ColorGroup
@@ -66,11 +76,10 @@ struct CellWrap
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// ---- Variables -----------------------------------------------------------------------//
+/* ---- Variables -----------------------------------------------------------------------*/
 
 int wallclockUpdateTimer = 0;
-char dateReport[8];
-char timeReport[8];
+int month, day, hour, minute, second, millisecond;
 
 float attractionFactorMatrix[MAX_COLOR_GROUPS][MAX_COLOR_GROUPS];
 Particle particles[MAX_PARTICLES];
@@ -82,6 +91,7 @@ const float forceFactor = 5.0;
 float deltaTime = 0.0f;
 int fps = 0;
 int fpsTimer = 0;
+int randomizeTimer = 0;
 // Divide the area into cells whos size is the
 // diameter of the circle of influence for every particle
 const float cellSize = maxDistance * 2.0;
@@ -90,7 +100,7 @@ Cell grid[CELL_GRID_HEIGHT][CELL_GRID_WIDTH];
 Color FrameBuffer[FRAMEBUF_HEIGHT][FRAMEBUF_WIDTH];
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// ---- Functions -----------------------------------------------------------------------//
+/* ---- Math and help functions ---------------------------------------------------------*/
 
 // If there is an overflow, return 255
 uint8_t AddClamp(uint8_t a, uint8_t b)
@@ -157,7 +167,6 @@ float AttractionForceMag(float distance, float attractionFactor)
     }
 }
 
-
 unsigned long timerDiff(unsigned long a, unsigned long b)
 {
     if (a > b)
@@ -204,6 +213,28 @@ Color ColorMultiply(Color color, float value)
 		(uint8_t)(color.b * value)};
 }
 
+static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
+{
+	float left = fmax(square1.x, square2.x);
+	float right = fmin(square1.x + 1, square2.x + 1);
+	float top = fmax(square1.y, square2.y);
+	float bottom = fmin(square1.y + 1, square2.y + 1);
+
+	float width = right - left;
+	float height = bottom - top;
+
+	if (width <= 0 || height <= 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return width * height;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+/* ---- Framebuffer functions -----------------------------------------------------------*/
 
 void FrameBufferClear(Color color)
 {
@@ -218,10 +249,12 @@ void FrameBufferClear(Color color)
 
 void FrameBufferSetPix(int x, int y, Color color)
 {
-	if (x < 0 || y < 0)
-		return;
-	if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
-		return;
+	// if (x < 0 || y < 0)
+	// 	return;
+	// if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
+	// 	return;
+    x = x % FRAMEBUF_WIDTH;
+    y = y % FRAMEBUF_HEIGHT;
 	FrameBuffer[y][x] = color;
 }
 
@@ -254,26 +287,6 @@ void FrameBufferAddPixV(Vector2 pos, Color color)
 	FrameBufferAddPix(pos.x, pos.y, color);
 }
 
-static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
-{
-	float left = fmax(square1.x, square2.x);
-	float right = fmin(square1.x + 1, square2.x + 1);
-	float top = fmax(square1.y, square2.y);
-	float bottom = fmin(square1.y + 1, square2.y + 1);
-
-	float width = right - left;
-	float height = bottom - top;
-
-	if (width <= 0 || height <= 0)
-	{
-		return 0;
-	}
-	else
-	{
-		return width * height;
-	}
-}
-
 void drawPixelVColor(Vector2 position, Color color)
 {
     matrix->drawPixelRGB888((int)position.x, (int)position.y, color.r, color.g, color.b);
@@ -288,10 +301,10 @@ void DrawPoint(Vector2 position, Color color)
 	Vector2 cornerTopLeft = {position.x - 0.5f, position.y - 0.5f};
 
 	// Find the corners of the squares of the grid pixels around the point
-	Vector2 pixelCornerTopLeft = {floorf(position.x - 0.5), floorf(position.y - 0.5)};
-	Vector2 pixelCornerTopRight = {pixelCornerTopLeft.x + 1.0, pixelCornerTopLeft.y};
-	Vector2 pixelCornerBottomLeft = {pixelCornerTopLeft.x, pixelCornerTopLeft.y + 1.0};
-	Vector2 pixelCornerBottomRight = {pixelCornerTopLeft.x + 1.0, pixelCornerTopLeft.y + 1.0};
+	Vector2 pixelCornerTopLeft = {floorf(position.x - 0.5f), floorf(position.y - 0.5f)};
+	Vector2 pixelCornerTopRight = {pixelCornerTopLeft.x + 1.0f, pixelCornerTopLeft.y};
+	Vector2 pixelCornerBottomLeft = {pixelCornerTopLeft.x, pixelCornerTopLeft.y + 1.0f};
+	Vector2 pixelCornerBottomRight = {pixelCornerTopLeft.x + 1.0f, pixelCornerTopLeft.y + 1.0f};
 
 	// Find the overlapping areas between the imaginary square around the point and
 	// the grid squares
@@ -316,6 +329,99 @@ void DrawPoint(Vector2 position, Color color)
 	// drawPixelVColor(pixelCornerBottomLeft, colorBottomLeft);
 	// drawPixelVColor(pixelCornerBottomRight, colorBottomRight);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+/* ---- Clock-related functions ---------------------------------------------------------*/
+
+void wallclockUpdate()
+{
+    if (timerDiff(millis(), wallclockUpdateTimer) > WALLCLOCK_UPDATE_INTERVAL)
+    {
+        wallclockUpdateTimer = millis();
+        time_t now;
+        time(&now);
+        tm* localTime = localtime(&now);
+        month = localTime->tm_mon + 1;
+        day = localTime->tm_mday;
+        hour = localTime->tm_hour % 12;
+        minute = localTime->tm_min;
+        second = localTime->tm_sec;
+        millisecond = 0;
+    }
+}
+
+// Draws onto the framebuffer!!
+void drawDigit(int digit, int x, int y, Color color)
+{
+    const uint8_t* digitData;
+    if (digit < 0 || digit > 9)
+    {
+        digitData = digit0;
+    }
+    else
+    {
+        digitData = digits[digit];
+    }
+    for (int i = 0; i < DIGIT_HEIGHT; i++)
+    {
+        for (int j = 0; j < DIGIT_WIDTH; j++)
+        {
+            uint8_t rowBits = digitData[i];
+            if (rowBits & (1 << (DIGIT_WIDTH - 1 - j)))  // Read the bits in reverse order
+            {
+                FrameBufferAddPix(x + j, y + i, color);
+            }
+        }
+    }
+}
+
+void drawNumberFb(int number, int x, int y, Color color)
+{
+    int digit1 = number / 10;
+    int digit2 = number % 10;
+    drawDigit(digit1, x, y, color);
+    drawDigit(digit2, x + DIGIT_WIDTH + 1, y, color);
+}
+
+void drawProgressBarFb(int value, int maximum, Vector2i pos, int barMaxWidth, Color color)
+{
+    if (value > maximum)
+        value = maximum;
+    if (value < 0)
+        value = 0;
+    float barWidth = (float)value / (float)maximum * (float)barMaxWidth;
+    int barWidthWhole = (int)barWidth;
+    float barWidthFractional = barWidth - (float)barWidthWhole;
+    for (int i = 0; i < barWidthWhole; i++)
+    {
+        FrameBufferAddPix(pos.x + i, pos.y, color);
+    }
+    if (barWidthWhole < maximum && barWidthFractional > 0.0f)
+    {
+        FrameBufferAddPix(pos.x + barWidthWhole, pos.y, ColorMultiply(color, barWidthFractional));
+    }
+}
+
+void drawClock()
+{
+    const Vector2i monthPos = { 1, 20 };
+    const Vector2i dayPos = { 1, 26 };
+    const Vector2i hourPos = { 56, 26 };
+    const Vector2i hourBarPos = { 56, 24 };
+    const Vector2i minuteBarPos = { 56, 22 };
+    const Vector2i secondBarPos = { 56, 20 };
+    const int barWidth = 7;
+    const Color grey = { 127, 127, 127 };
+    drawNumberFb(month, monthPos.x, monthPos.y, grey);
+    drawNumberFb(day, dayPos.x, dayPos.y, grey);
+    drawNumberFb(hour, hourPos.x, hourPos.y, grey);
+    drawProgressBarFb(minute, 60, hourBarPos, barWidth, grey);
+    drawProgressBarFb(second, 60, minuteBarPos, barWidth, grey);
+    drawProgressBarFb(millis() % 1000, 1000, secondBarPos, barWidth, grey);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+/* ---- Life-related functions ----------------------------------------------------------*/
 
 void drawParticle(Particle* particle)
 {
@@ -533,6 +639,11 @@ void lifeUpdate()
         fpsTimer = currentMillis;
         fps = 1.0f / deltaTime;
     }
+    if (timerDiff(currentMillis, randomizeTimer) > RANDOMIZE_INTERVAL)
+    {
+        randomizeTimer = currentMillis;
+        randomizeAttractionFactorMatrix();
+    }
     if (rotationInput != 0)
 	{
 		rotationInput = 0;
@@ -557,30 +668,15 @@ void lifeDraw()
 {
     //matrix->clearScreen();
     FrameBufferClear((Color){0, 0, 0});
+    drawClock();
     drawParticles();
     drawFrameBuffer();
-    matrix->setTextColor(matrix->color565(0, 255, 128));
-    matrix->setCursor(0, 0);
-    matrix->print(dateReport);
-    matrix->setCursor(0, 32 - 8);
-    matrix->print(timeReport);
     matrix->flipDMABuffer();
 }
 
-void wallclockUpdate()
-{
-    if (timerDiff(millis(), wallclockUpdateTimer) > WALLCLOCK_UPDATE_INTERVAL)
-    {
-        wallclockUpdateTimer = millis();
-        time_t now;
-        time(&now);
-        strftime(dateReport, 8, "%m/%d", localtime(&now));
-        strftime(timeReport, 8, "%I:%M", localtime(&now));
-    }
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// ---- Setup and Loop ------------------------------------------------------------------//
+/* ---- Setup and Loop ------------------------------------------------------------------*/
 
 void lifeSetup()
 {
