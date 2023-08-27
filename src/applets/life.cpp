@@ -103,6 +103,10 @@ Color FrameBuffer[FRAMEBUF_HEIGHT][FRAMEBUF_WIDTH];
 ///////////////////////////////////////////////////////////////////////////////////////////
 /* ---- Math and help functions ---------------------------------------------------------*/
 
+int positiveMod(int i, int n) {
+    return (i % n + n) % n;
+}
+
 int clampI(int value, int min, int max)
 {
     if (value < min)
@@ -305,8 +309,8 @@ void FrameBufferSetPix(int x, int y, Color color)
 	// 	return;
 	// if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
 	// 	return;
-    x = x % FRAMEBUF_WIDTH;
-    y = y % FRAMEBUF_HEIGHT;
+    x = positiveMod(x, FRAMEBUF_WIDTH);
+    y = positiveMod(y, FRAMEBUF_HEIGHT);
 	FrameBuffer[y][x] = color;
 }
 
