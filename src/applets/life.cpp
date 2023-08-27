@@ -12,7 +12,7 @@
 #define MAX_PARTICLES_PER_CELL 100
 
 #define MAX_PARTICLES 120
-#define MAX_COLOR_GROUPS 2
+#define MAX_COLOR_GROUPS 8
 
 #define RANDOMIZE_INTERVAL 15000
 #define FPS_REPORT_INTERVAL 1000
@@ -45,7 +45,7 @@ struct Color
 	uint8_t b;
 };
 
-const Color ColorGroupColors[] = {
+Color ColorGroupColors[MAX_COLOR_GROUPS] = {
 	{255, 20, 67},
 	{20, 200, 255},
 	{255, 200, 20},
@@ -83,6 +83,7 @@ int month, day, hour, minute, second, millisecond;
 
 float attractionFactorMatrix[MAX_COLOR_GROUPS][MAX_COLOR_GROUPS];
 Particle particles[MAX_PARTICLES];
+int numColorGroups = 2;
 // In worldspace, the radius of the sphere of influence for each particle.
 const float maxDistance = 0.25; // Please let 2 be evenly divisible by this number, for cellSize's sake
 const float dt = 0.01;
@@ -101,6 +102,15 @@ Color FrameBuffer[FRAMEBUF_HEIGHT][FRAMEBUF_WIDTH];
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 /* ---- Math and help functions ---------------------------------------------------------*/
+
+int clampI(int value, int min, int max)
+{
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
 
 // If there is an overflow, return 255
 uint8_t AddClamp(uint8_t a, uint8_t b)
@@ -197,22 +207,6 @@ uint8_t randByte(uint8_t a, uint8_t b)
     return rand() % (b - a + 1) + a;
 }
 
-Color ColorAdd(Color a, Color b)
-{
-	return {
-		AddClamp(a.r, b.r),
-		AddClamp(a.g, b.g),
-		AddClamp(a.b, b.b)};
-}
-
-Color ColorMultiply(Color color, float value)
-{
-	return {
-		(uint8_t)(color.r * value),
-		(uint8_t)(color.g * value),
-		(uint8_t)(color.b * value)};
-}
-
 static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 {
 	float left = fmax(square1.x, square2.x);
@@ -231,6 +225,64 @@ static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 	{
 		return width * height;
 	}
+}
+
+Color ColorAdd(Color a, Color b)
+{
+	return {
+		AddClamp(a.r, b.r),
+		AddClamp(a.g, b.g),
+		AddClamp(a.b, b.b)};
+}
+
+Color ColorMultiply(Color color, float value)
+{
+	return {
+		(uint8_t)(color.r * value),
+		(uint8_t)(color.g * value),
+		(uint8_t)(color.b * value)};
+}
+
+Color HSVtoRGB(float H, float S, float V) {
+    if (H > 360 || H < 0 || S>100 || S < 0 || V>100 || V < 0) {
+        Color col = { 7, 7, 7 };
+    }
+    float s = S / 100;
+    float v = V / 100;
+    float C = s * v;
+    float X = C * (1 - abs(fmod(H / 60.0, 2) - 1));
+    float m = v - C;
+    float r, g, b;
+    if (H >= 0 && H < 60) {
+        r = C, g = X, b = 0;
+    }
+    else if (H >= 60 && H < 120) {
+        r = X, g = C, b = 0;
+    }
+    else if (H >= 120 && H < 180) {
+        r = 0, g = C, b = X;
+    }
+    else if (H >= 180 && H < 240) {
+        r = 0, g = X, b = C;
+    }
+    else if (H >= 240 && H < 300) {
+        r = X, g = 0, b = C;
+    }
+    else {
+        r = C, g = 0, b = X;
+    }
+    int R = (r + m) * 255;
+    int G = (g + m) * 255;
+    int B = (b + m) * 255;
+    return (Color) { R, G, B };
+}
+
+Color getRandomColor() {
+    const float golden_ratio_conjugate = 0.618033988749895f * 360.0f;
+    static float randomHue;
+    randomHue += golden_ratio_conjugate;
+    randomHue = fmod(randomHue, 360.0f);
+    return HSVtoRGB(randomHue, 100.0f, 100.0f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -462,6 +514,22 @@ void randomizeAttractionFactorMatrix()
     }
 }
 
+void randomizeColorGroupColors()
+{
+    for (int i = 0; i < MAX_COLOR_GROUPS; i++)
+    {
+        ColorGroupColors[i] = getRandomColor();
+    }
+}
+
+void randomizeColorGroups()
+{
+    for (int i = 0; i < MAX_PARTICLES; i++)
+    {
+        particles[i].colorGroup = (ColorGroup)randByte(0, numColorGroups - 1);
+    }
+}
+
 void GetNeighborCells(Cell **listToPopulate, int row, int col, CellWrap *wrapList)
 {
     uint8_t left = (col == 0) ? CELL_GRID_WIDTH - 1 : col - 1;
@@ -643,12 +711,23 @@ void lifeUpdate()
     {
         randomizeTimer = currentMillis;
         randomizeAttractionFactorMatrix();
+        randomizeColorGroupColors();
     }
-    if (rotationInput != 0)
-	{
-		rotationInput = 0;
+    while (rotationInput != 0)
+    {
+        if (rotationInput > 0)
+        {
+            numColorGroups = clampI(numColorGroups + 1, 1, MAX_COLOR_GROUPS);
+            rotationInput--;
+        }
+        else
+        {
+            numColorGroups = clampI(numColorGroups - 1, 1, MAX_COLOR_GROUPS);
+            rotationInput++;
+        }
+        randomizeColorGroups();
         randomizeAttractionFactorMatrix();
-	}
+    }
     UpdateGrid();
     updateParticles();
 }
@@ -673,7 +752,6 @@ void lifeDraw()
     drawFrameBuffer();
     matrix->flipDMABuffer();
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 /* ---- Setup and Loop ------------------------------------------------------------------*/
