@@ -117,7 +117,7 @@ int clampI(int value, int min, int max)
 }
 
 // If there is an overflow, return 255
-uint8_t AddClamp(uint8_t a, uint8_t b)
+uint8_t addClamp(uint8_t a, uint8_t b)
 {
 	uint8_t sum = a + b;
 	if (sum < a || sum < b)
@@ -130,29 +130,29 @@ uint8_t AddClamp(uint8_t a, uint8_t b)
 	}
 }
 
-Vector2 Vector2Subtract(Vector2 a, Vector2 b)
+Vector2 vector2Subtract(Vector2 a, Vector2 b)
 {
     return {a.x - b.x, a.y - b.y};
 }
 
-float Vector2Length(Vector2 a)
+float vector2Length(Vector2 a)
 {
     return sqrt(a.x * a.x + a.y * a.y);
 }
 
-Vector2 Vector2Scale(Vector2 a, float scalar)
+Vector2 vector2Scale(Vector2 a, float scalar)
 {
     return {a.x * scalar, a.y * scalar};
 }
 
-Vector2 Vector2Add(Vector2 a, Vector2 b)
+Vector2 vector2Add(Vector2 a, Vector2 b)
 {
     return {a.x + b.x, a.y + b.y};
 }
 
-Vector2 Vector2Normalize(Vector2 vec)
+Vector2 vector2Normalize(Vector2 vec)
 {
-    float length = Vector2Length(vec);
+    float length = vector2Length(vec);
     if (length != 0.0f)
     {
         vec.x /= length;
@@ -161,7 +161,7 @@ Vector2 Vector2Normalize(Vector2 vec)
     return vec;
 }
 
-float AttractionForceMag(float distance, float attractionFactor)
+float attractionForceMag(float distance, float attractionFactor)
 {
     // Closer than this, and the particles will push each other away
     const float tooCloseDistance = 0.4;
@@ -211,7 +211,7 @@ uint8_t randByte(uint8_t a, uint8_t b)
     return rand() % (b - a + 1) + a;
 }
 
-static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
+static float squareIntersectionArea(Vector2 square1, Vector2 square2)
 {
 	float left = fmax(square1.x, square2.x);
 	float right = fmin(square1.x + 1, square2.x + 1);
@@ -231,15 +231,15 @@ static float SquareIntersectionArea(Vector2 square1, Vector2 square2)
 	}
 }
 
-Color ColorAdd(Color a, Color b)
+Color colorAdd(Color a, Color b)
 {
 	return {
-		AddClamp(a.r, b.r),
-		AddClamp(a.g, b.g),
-		AddClamp(a.b, b.b)};
+		addClamp(a.r, b.r),
+		addClamp(a.g, b.g),
+		addClamp(a.b, b.b)};
 }
 
-Color ColorMultiply(Color color, float value)
+Color colorMultiply(Color color, float value)
 {
 	return {
 		(uint8_t)(color.r * value),
@@ -247,7 +247,7 @@ Color ColorMultiply(Color color, float value)
 		(uint8_t)(color.b * value)};
 }
 
-Color HSVtoRGB(float H, float S, float V) {
+Color hsvToRgb(float H, float S, float V) {
     if (H > 360 || H < 0 || S>100 || S < 0 || V>100 || V < 0) {
         Color col = { 7, 7, 7 };
     }
@@ -286,7 +286,7 @@ Color getRandomColor() {
     static float randomHue;
     randomHue += golden_ratio_conjugate;
     randomHue = fmod(randomHue, 360.0f);
-    return HSVtoRGB(randomHue, 100.0f, 100.0f);
+    return hsvToRgb(randomHue, 100.0f, 100.0f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -303,7 +303,7 @@ void FrameBufferClear(Color color)
 	}
 }
 
-void FrameBufferSetPix(int x, int y, Color color)
+void frameBufferSetPix(int x, int y, Color color)
 {
 	// if (x < 0 || y < 0)
 	// 	return;
@@ -314,33 +314,33 @@ void FrameBufferSetPix(int x, int y, Color color)
 	FrameBuffer[y][x] = color;
 }
 
-void FrameBufferSetPixV(Vector2 pos, Color color)
+void frameBufferSetPixV(Vector2 pos, Color color)
 {
-	FrameBufferSetPix(pos.x, pos.y, color);
+	frameBufferSetPix(pos.x, pos.y, color);
 }
 
-Color FrameBufferGetPix(int x, int y)
+Color frameBufferGetPix(int x, int y)
 {
 	return FrameBuffer[y][x];
 }
 
-Color FrameBufferGetPixV(Vector2 pos)
+Color frameBufferGetPixV(Vector2 pos)
 {
-	return FrameBufferGetPix(pos.x, pos.y);
+	return frameBufferGetPix(pos.x, pos.y);
 }
 
-void FrameBufferAddPix(int x, int y, Color color)
+void frameBufferAddPix(int x, int y, Color color)
 {
 	if (x < 0 || y < 0)
 		return;
 	if (x > FRAMEBUF_WIDTH - 1 || y > FRAMEBUF_HEIGHT - 1)
 		return;
-	FrameBufferSetPix(x, y, ColorAdd(FrameBufferGetPix(x, y), color));
+	frameBufferSetPix(x, y, colorAdd(frameBufferGetPix(x, y), color));
 }
 
-void FrameBufferAddPixV(Vector2 pos, Color color)
+void frameBufferAddPixV(Vector2 pos, Color color)
 {
-	FrameBufferAddPix(pos.x, pos.y, color);
+	frameBufferAddPix(pos.x, pos.y, color);
 }
 
 void drawPixelVColor(Vector2 position, Color color)
@@ -351,7 +351,7 @@ void drawPixelVColor(Vector2 position, Color color)
 // Draws a point on the screen at a sub-pixel level, unlike DrawPixel.
 // If the point is in-between screen pixels, it will be rendered using
 // its neighboring pixels.
-void DrawPoint(Vector2 position, Color color)
+void drawPoint(Vector2 position, Color color)
 {
 	// Find the corners of the imaginary pixel-sized square around the point
 	Vector2 cornerTopLeft = {position.x - 0.5f, position.y - 0.5f};
@@ -364,22 +364,22 @@ void DrawPoint(Vector2 position, Color color)
 
 	// Find the overlapping areas between the imaginary square around the point and
 	// the grid squares
-	float areaTopLeft = SquareIntersectionArea(cornerTopLeft, pixelCornerTopLeft);
-	float areaTopRight = SquareIntersectionArea(cornerTopLeft, pixelCornerTopRight);
-	float areaBottomLeft = SquareIntersectionArea(cornerTopLeft, pixelCornerBottomLeft);
-	float areaBottomRight = SquareIntersectionArea(cornerTopLeft, pixelCornerBottomRight);
+	float areaTopLeft = squareIntersectionArea(cornerTopLeft, pixelCornerTopLeft);
+	float areaTopRight = squareIntersectionArea(cornerTopLeft, pixelCornerTopRight);
+	float areaBottomLeft = squareIntersectionArea(cornerTopLeft, pixelCornerBottomLeft);
+	float areaBottomRight = squareIntersectionArea(cornerTopLeft, pixelCornerBottomRight);
 
 	// Find fractions of color
-	Color colorTopLeft = ColorMultiply(color, areaTopLeft);
-	Color colorTopRight = ColorMultiply(color, areaTopRight);
-	Color colorBottomLeft = ColorMultiply(color, areaBottomLeft);
-	Color colorBottomRight = ColorMultiply(color, areaBottomRight);
+	Color colorTopLeft = colorMultiply(color, areaTopLeft);
+	Color colorTopRight = colorMultiply(color, areaTopRight);
+	Color colorBottomLeft = colorMultiply(color, areaBottomLeft);
+	Color colorBottomRight = colorMultiply(color, areaBottomRight);
 
 	// Set pixels
-	FrameBufferAddPixV(pixelCornerTopLeft, colorTopLeft);
-	FrameBufferAddPixV(pixelCornerTopRight, colorTopRight);
-	FrameBufferAddPixV(pixelCornerBottomLeft, colorBottomLeft);
-	FrameBufferAddPixV(pixelCornerBottomRight, colorBottomRight);
+	frameBufferAddPixV(pixelCornerTopLeft, colorTopLeft);
+	frameBufferAddPixV(pixelCornerTopRight, colorTopRight);
+	frameBufferAddPixV(pixelCornerBottomLeft, colorBottomLeft);
+	frameBufferAddPixV(pixelCornerBottomRight, colorBottomRight);
 	// drawPixelVColor(pixelCornerTopLeft, colorTopLeft);
 	// drawPixelVColor(pixelCornerTopRight, colorTopRight);
 	// drawPixelVColor(pixelCornerBottomLeft, colorBottomLeft);
@@ -425,7 +425,7 @@ void drawDigit(int digit, int x, int y, Color color)
             uint8_t rowBits = digitData[i];
             if (rowBits & (1 << (DIGIT_WIDTH - 1 - j)))  // Read the bits in reverse order
             {
-                FrameBufferAddPix(x + j, y + i, color);
+                frameBufferAddPix(x + j, y + i, color);
             }
         }
     }
@@ -450,11 +450,11 @@ void drawProgressBarFb(int value, int maximum, Vector2i pos, int barMaxWidth, Co
     float barWidthFractional = barWidth - (float)barWidthWhole;
     for (int i = 0; i < barWidthWhole; i++)
     {
-        FrameBufferAddPix(pos.x + i, pos.y, color);
+        frameBufferAddPix(pos.x + i, pos.y, color);
     }
     if (barWidthWhole < maximum && barWidthFractional > 0.0f)
     {
-        FrameBufferAddPix(pos.x + barWidthWhole, pos.y, ColorMultiply(color, barWidthFractional));
+        frameBufferAddPix(pos.x + barWidthWhole, pos.y, colorMultiply(color, barWidthFractional));
     }
 }
 
@@ -485,7 +485,7 @@ void drawParticle(Particle* particle)
         particle->position.x * matrix->width() / getAspectRatio(),
         particle->position.y * matrix->height()
         };
-    DrawPoint(posOnScreen, ColorGroupColors[particle->colorGroup]);
+    drawPoint(posOnScreen, ColorGroupColors[particle->colorGroup]);
 }
 
 void drawParticles()
@@ -496,7 +496,7 @@ void drawParticles()
     }
 }
 
-void InitCellWraps(CellWrap *neighborCellWraps, uint8_t size)
+void initCellWraps(CellWrap *neighborCellWraps, uint8_t size)
 {
     for (uint8_t i = 0; i < size; i++)
     {
@@ -534,7 +534,7 @@ void randomizeColorGroups()
     }
 }
 
-void GetNeighborCells(Cell **listToPopulate, int row, int col, CellWrap *wrapList)
+void getNeighborCells(Cell **listToPopulate, int row, int col, CellWrap *wrapList)
 {
     uint8_t left = (col == 0) ? CELL_GRID_WIDTH - 1 : col - 1;
     uint8_t right = (col + 1) % CELL_GRID_WIDTH;
@@ -594,8 +594,8 @@ void updateParticles()
             // Get list of the 8 neighboring cells and itself
             Cell *neighborCells[9];
             CellWrap neighborCellWraps[9];
-            InitCellWraps(neighborCellWraps, 9);
-            GetNeighborCells(neighborCells, r, c, neighborCellWraps);
+            initCellWraps(neighborCellWraps, 9);
+            getNeighborCells(neighborCells, r, c, neighborCellWraps);
 
             // Go through every particle in this cell (as subjects)
             for (int pI = 0; pI < grid[r][c].particleCount; pI++)
@@ -632,25 +632,25 @@ void updateParticles()
                         }
 
                         // Only deal with neighbors within sphere of influence
-                        Vector2 delta = Vector2Subtract(particles[i].position, particleObjPercievedPos);
-                        float distance = Vector2Length(delta);
+                        Vector2 delta = vector2Subtract(particles[i].position, particleObjPercievedPos);
+                        float distance = vector2Length(delta);
                         if (distance > 0.0 && distance < maxDistance)
                         {
                             // How hard do I need to move?
-                            float forceMag = AttractionForceMag(distance / maxDistance, attractionFactorMatrix[particles[i].colorGroup][particles[j].colorGroup]);
+                            float forceMag = attractionForceMag(distance / maxDistance, attractionFactorMatrix[particles[i].colorGroup][particles[j].colorGroup]);
 
                             // Where do I need to move?
                             // Normalize then scale by force magnitude
-                            Vector2 force = Vector2Scale(delta, -1.0 / distance * forceMag);
-                            totalForce = Vector2Add(totalForce, force);
+                            Vector2 force = vector2Scale(delta, -1.0 / distance * forceMag);
+                            totalForce = vector2Add(totalForce, force);
                         }
                     }
                 }
 
-                totalForce = Vector2Scale(totalForce, maxDistance * forceFactor);
+                totalForce = vector2Scale(totalForce, maxDistance * forceFactor);
 
-                particles[i].velocity = Vector2Scale(particles[i].velocity, frictionFactor);
-                particles[i].velocity = Vector2Add(particles[i].velocity, Vector2Scale(totalForce, deltaTime));
+                particles[i].velocity = vector2Scale(particles[i].velocity, frictionFactor);
+                particles[i].velocity = vector2Add(particles[i].velocity, vector2Scale(totalForce, deltaTime));
 
                 // Update the particle's position based on its velocity
                 particles[i].position.x += particles[i].velocity.x * deltaTime;
@@ -670,7 +670,7 @@ void updateParticles()
     }
 }
 
-void UpdateGrid()
+void updateGrid()
 {
     // Clear the list of particles for each cell
     for (int i = 0; i < CELL_GRID_HEIGHT; i++)
@@ -732,7 +732,7 @@ void lifeUpdate()
         randomizeColorGroups();
         randomizeAttractionFactorMatrix();
     }
-    UpdateGrid();
+    updateGrid();
     updateParticles();
 }
 
