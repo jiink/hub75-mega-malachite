@@ -634,14 +634,14 @@ void updateParticles()
                         // Only deal with neighbors within sphere of influence
                         Vector2 delta = vector2Subtract(particles[i].position, particleObjPercievedPos);
                         float distance = vector2Length(delta);
-                        if (distance > 0.0 && distance < maxDistance)
+                        if (distance > 0.001f && distance < maxDistance)
                         {
                             // How hard do I need to move?
                             float forceMag = attractionForceMag(distance / maxDistance, attractionFactorMatrix[particles[i].colorGroup][particles[j].colorGroup]);
 
                             // Where do I need to move?
                             // Normalize then scale by force magnitude
-                            Vector2 force = vector2Scale(delta, -1.0 / distance * forceMag);
+                            Vector2 force = vector2Scale(delta, -1.0f / distance * forceMag);
                             totalForce = vector2Add(totalForce, force);
                         }
                     }
