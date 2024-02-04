@@ -161,6 +161,7 @@ void setup()
 
 void loop()
 {
+    handleOtaPeriodic();
     rotaryLoop();
 	switch (state)
 	{

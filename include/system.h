@@ -34,5 +34,6 @@ extern volatile int rotationInput; // Negative is CCW, positive is CW. Resets to
 void rotaryLoop();
 void IRAM_ATTR readEncoderISR();
 void connectToWifi();
+void handleOtaPeriodic();
 void synchrnoizeTime();
 #endif
