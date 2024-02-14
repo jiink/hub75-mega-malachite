@@ -105,17 +105,17 @@ void movingPixelSetup(void)
 
 void updateDirection(){
 	const float directionIncrement = 0.1f;
-	while (rotationInput != 0)
+	while (rotationInput0 != 0)
 	{
-		if (rotationInput > 0)
+		if (rotationInput0 > 0)
 		{
 			direction += directionIncrement;
-			rotationInput--;
+			rotationInput0--;
 		}
 		else
 		{
 			direction -= directionIncrement;
-			rotationInput++;
+			rotationInput0++;
 		}
 	}
 	xVelocity = speed * cos(direction);

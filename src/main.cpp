@@ -32,6 +32,7 @@ void doNothing(void);
 
 // Variables
 MatrixPanel_I2S_DMA* matrix = nullptr;
+uint16_t backgroundColor = matrix->color565(128, 0, 50);
 
 enum ProgramState
 {
@@ -96,28 +97,39 @@ void menuLoop()
 {
 	matrix->fillScreen(matrix->color565(128, 0, 50));
 
-	if (rotationInput > 0)
+	if (rotationInput0 > 0)
 	{
-		rotationInput = 0;
+		rotationInput0 = 0;
 		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, 1);
         //Serial.println("P");
         Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
-	else if (rotationInput < 0)
+	else if (rotationInput0 < 0)
 	{
-		rotationInput = 0;
+		rotationInput0 = 0;
 		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, -1);
         //Serial.println("N");
         Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
 	}
 
-	if (buttonPressed)
+	if (buttonPressed0)
 	{
         Serial.printf("Button pressed!\r\n");
-		buttonPressed = false;
+		buttonPressed0 = false;
 		state = APPLET;
 		applets[appletSelectedIndex].appletSetup();
 	}
+    if (buttonPressed1)
+    {
+        if (backgroundColor == matrix->color565(128, 0, 50))
+        {
+            backgroundColor = matrix->color565(0, 0, 0);
+        }
+        else
+        {
+            backgroundColor = matrix->color565(128, 0, 50);
+        }
+    }
 
 	// Display
 	// Show the name of the selected applet
@@ -139,13 +151,7 @@ void setup()
     matrix = new MatrixPanel_I2S_DMA(mxconfig);
     matrix->begin();
     matrix->setBrightness8(255);
-    rotaryEncoder.begin();
-    rotaryEncoder.setup(readEncoderISR);
-    //set boundaries and if values should cycle or not
-    bool circleValues = false;
-    rotaryEncoder.setBoundaries(-1000000, 1000000, circleValues); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
-    //rotaryEncoder.setAcceleration(250); //or set the value - larger number = more accelearation; 0 or 1 means disabled acceleration
-    rotaryEncoder.disableAcceleration();
+    rotaryEncoderSetup();
 
 	initializeApplets();
 
@@ -162,16 +168,15 @@ void setup()
 void loop()
 {
     handleOtaPeriodic();
-    rotaryLoop();
 	switch (state)
 	{
 	case MENU:
 		menuLoop();
 		break;
 	case APPLET:
-		if (buttonPressed)
+		if (buttonPressed0)
 		{
-			buttonPressed = false;
+			buttonPressed0 = false;
 			state = MENU;
 		}
 		applets[appletSelectedIndex].appletLoop();

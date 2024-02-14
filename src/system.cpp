@@ -4,48 +4,66 @@
 #include <WiFiUdp.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
+#include <ESP32RotaryEncoder.h>
 #include "system.h"
 #include "wifiCredentials.h"
 
 #define HANDLE_OTA_INTERVAL 500 // how many ms to wait between OTA checks
 
-AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
+RotaryEncoder rotaryEncoder0 = RotaryEncoder(ROTARY_ENCODER_0_A_PIN, ROTARY_ENCODER_0_B_PIN, ROTARY_ENCODER_0_BUTTON_PIN);
+RotaryEncoder rotaryEncoder1 = RotaryEncoder(ROTARY_ENCODER_1_A_PIN, ROTARY_ENCODER_1_B_PIN, ROTARY_ENCODER_1_BUTTON_PIN);
 
-volatile int rotationInput = 0;
-volatile bool buttonPressed = false;
+volatile int rotationInput0 = 0;
+volatile int rotationInput1 = 0;
+volatile bool buttonPressed0 = false;
+volatile bool buttonPressed1 = false;
 
-static int lastEncoderValue = 0;
-static unsigned long lastTimePressed = 0;
+static int lastEncoderValue0 = 0;
+static int lastEncoderValue1 = 0;
 
 static int handleOtaTimer = 0;
 
-void rotaryLoop()
+void knob0Turned(long value)
 {
-    //dont print anything unless value changed
-    if (rotaryEncoder.encoderChanged())
-    {
-        int currentValue = rotaryEncoder.readEncoder();
-        rotationInput += currentValue - lastEncoderValue;
-        lastEncoderValue = currentValue;
-        Serial.printf("rotationInput: %d\r\n", rotationInput);
-    }
-    if (rotaryEncoder.isEncoderButtonClicked())
-    {
-        printf("m - l: %d - %d\r\n", millis(), lastTimePressed);
-        // Soft debouncing
-        if (abs((int)(millis() - lastTimePressed)) > 200)
-        {
-            printf("Pressed\r\n");
-            buttonPressed = true;
-            lastTimePressed = millis();
-        }
-    }
+    rotationInput0 += value - lastEncoderValue0;
+    lastEncoderValue0 = value;
 }
 
-void IRAM_ATTR readEncoderISR()
+void knob1Turned(long value)
 {
-    rotaryEncoder.readEncoder_ISR();
+    rotationInput1 += value - lastEncoderValue1;
+    lastEncoderValue1 = value;
 }
+
+void knob0Pressed(unsigned long duration)
+{
+    buttonPressed0 = true;
+}
+
+void knob1Pressed(unsigned long duration)
+{
+    buttonPressed1 = true;
+}
+
+void rotaryEncoderSetup()
+{
+    const int lowerBoundary = -1000000;
+    const int upperBoundary = 1000000;
+    const bool wrapValues = true;
+
+    rotaryEncoder0.setEncoderType(EncoderType::HAS_PULLUP); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    rotaryEncoder0.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
+    rotaryEncoder0.onTurned(&knob0Turned);
+    rotaryEncoder0.onPressed(&knob0Pressed);
+    rotaryEncoder0.begin();
+
+    rotaryEncoder1.setEncoderType(EncoderType::HAS_PULLUP); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    rotaryEncoder1.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
+    rotaryEncoder1.onTurned(&knob1Turned);
+    rotaryEncoder1.onPressed(&knob1Pressed);
+    rotaryEncoder1.begin();
+}
+
 
 void connectToWifi()
 {

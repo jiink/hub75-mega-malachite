@@ -24,17 +24,17 @@ void cityLoop ()
 
     cTime = (float)millis() / 1000.0f * timeScale;
 
-    while (rotationInput != 0)
+    while (rotationInput0 != 0)
     {
-        if (rotationInput > 0)
+        if (rotationInput0 > 0)
         {
             timeScale += moveStep * 10;
-            rotationInput--;
+            rotationInput0--;
         }
         else
         {
             timeScale -= moveStep * 10;
-            rotationInput++;
+            rotationInput0++;
         }
     }
 

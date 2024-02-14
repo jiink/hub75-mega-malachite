@@ -86,18 +86,18 @@ void phasesLoop()
     matrix->fillScreen(matrix->color333(0, 0, 0));
     pTime = (float)millis() / 1000.0f * timeScale;
 
-    while (rotationInput != 0)
+    while (rotationInput0 != 0)
     {
         float timeStep = 0.05f;
-        if (rotationInput > 0)
+        if (rotationInput0 > 0)
         {
             timeScale += timeStep;
-            rotationInput--;
+            rotationInput0--;
         }
         else
         {
             timeScale -= timeStep;
-            rotationInput++;
+            rotationInput0++;
         }
     }
 

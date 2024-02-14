@@ -717,17 +717,17 @@ void lifeUpdate()
         randomizeAttractionFactorMatrix();
         randomizeColorGroupColors();
     }
-    while (rotationInput != 0)
+    while (rotationInput0 != 0)
     {
-        if (rotationInput > 0)
+        if (rotationInput0 > 0)
         {
             numColorGroups = clampI(numColorGroups + 1, 1, MAX_COLOR_GROUPS);
-            rotationInput--;
+            rotationInput0--;
         }
         else
         {
             numColorGroups = clampI(numColorGroups - 1, 1, MAX_COLOR_GROUPS);
-            rotationInput++;
+            rotationInput0++;
         }
         randomizeColorGroups();
         randomizeAttractionFactorMatrix();
