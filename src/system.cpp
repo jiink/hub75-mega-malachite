@@ -10,8 +10,8 @@
 
 #define HANDLE_OTA_INTERVAL 500 // how many ms to wait between OTA checks
 
-RotaryEncoder rotaryEncoder0 = RotaryEncoder(ROTARY_ENCODER_0_A_PIN, ROTARY_ENCODER_0_B_PIN, ROTARY_ENCODER_0_BUTTON_PIN);
-RotaryEncoder rotaryEncoder1 = RotaryEncoder(ROTARY_ENCODER_1_A_PIN, ROTARY_ENCODER_1_B_PIN, ROTARY_ENCODER_1_BUTTON_PIN);
+RotaryEncoder rotaryEncoder0 = RotaryEncoder(ROTARY_ENCODER_0_A_PIN, ROTARY_ENCODER_0_B_PIN, ROTARY_ENCODER_0_BUTTON_PIN, ROTARY_ENCODER_0_VCC_PIN);
+RotaryEncoder rotaryEncoder1 = RotaryEncoder(ROTARY_ENCODER_1_A_PIN, ROTARY_ENCODER_1_B_PIN, ROTARY_ENCODER_1_BUTTON_PIN, ROTARY_ENCODER_1_VCC_PIN);
 
 volatile int rotationInput0 = 0;
 volatile int rotationInput1 = 0;
@@ -27,22 +27,26 @@ void knob0Turned(long value)
 {
     rotationInput0 += value - lastEncoderValue0;
     lastEncoderValue0 = value;
+    Serial.println("Knob 0 turned");
 }
 
 void knob1Turned(long value)
 {
     rotationInput1 += value - lastEncoderValue1;
     lastEncoderValue1 = value;
+    Serial.println("Knob 1 turned");
 }
 
 void knob0Pressed(unsigned long duration)
 {
     buttonPressed0 = true;
+    Serial.println("Knob 0 pressed");
 }
 
 void knob1Pressed(unsigned long duration)
 {
     buttonPressed1 = true;
+    Serial.println("Knob 1 pressed");
 }
 
 void rotaryEncoderSetup()
@@ -51,13 +55,13 @@ void rotaryEncoderSetup()
     const int upperBoundary = 1000000;
     const bool wrapValues = true;
 
-    rotaryEncoder0.setEncoderType(EncoderType::HAS_PULLUP); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    rotaryEncoder0.setEncoderType(EncoderType::FLOATING); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
     rotaryEncoder0.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
     rotaryEncoder0.onTurned(&knob0Turned);
     rotaryEncoder0.onPressed(&knob0Pressed);
     rotaryEncoder0.begin();
 
-    rotaryEncoder1.setEncoderType(EncoderType::HAS_PULLUP); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    rotaryEncoder1.setEncoderType(EncoderType::FLOATING); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
     rotaryEncoder1.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
     rotaryEncoder1.onTurned(&knob1Turned);
     rotaryEncoder1.onPressed(&knob1Pressed);
