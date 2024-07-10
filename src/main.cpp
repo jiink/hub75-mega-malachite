@@ -26,7 +26,6 @@
 
 
 #define MAX_APPLETS 16
-
 // Prototypes
 void doNothing(void);
 
@@ -37,7 +36,8 @@ uint16_t backgroundColor = matrix->color565(128, 0, 50);
 enum ProgramState
 {
 	MENU,
-	APPLET
+	APPLET,
+    NOISE
 };
 ProgramState state = APPLET;
 
@@ -51,6 +51,13 @@ struct AppletEntry
 AppletEntry applets[MAX_APPLETS];
 uint8_t numApplets = 0;
 uint8_t appletSelectedIndex = 3;
+
+// TV static effect stuff
+#define TVSTATIC_INTERVAL 100
+#define STATIC_MEM_RANGE 16384
+unsigned long tvStaticTimer = 0;
+char* programMemoryStart = (char*)esp_get_idf_version();
+char* noiseSource = (char*)programMemoryStart;
 
 void doNothing()
 {
@@ -93,54 +100,59 @@ int addWrap(int num, int max, int incr) {
     return result;
 }
 
-void menuLoop()
+
+ProgramState handleSystemControls(ProgramState s)
 {
-	matrix->fillScreen(matrix->color565(128, 0, 50));
-
-	if (rotationInput0 > 0)
-	{
-		rotationInput0 = 0;
-		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, 1);
-        //Serial.println("P");
-        Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
-	}
-	else if (rotationInput0 < 0)
-	{
-		rotationInput0 = 0;
-		appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, -1);
-        //Serial.println("N");
-        Serial.printf("Selected applet: %d\r\n", appletSelectedIndex);
-	}
-
-	if (buttonPressed0)
-	{
-        Serial.printf("Button pressed!\r\n");
-		buttonPressed0 = false;
-		state = APPLET;
-		applets[appletSelectedIndex].appletSetup();
-	}
-    if (buttonPressed1)
+    if (s != APPLET) { return s; }
+    // Handle the rotary encoder input
+    // (Don't skip any)
+    if (rotationInput1 > 0)
     {
-        if (backgroundColor == matrix->color565(128, 0, 50))
-        {
-            backgroundColor = matrix->color565(0, 0, 0);
-        }
-        else
-        {
-            backgroundColor = matrix->color565(128, 0, 50);
-        }
+        rotationInput1 = 0;
+        appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, 1);
+        tvStaticTimer = millis();
+        s = NOISE;
     }
-
-	// Display
-	// Show the name of the selected applet
-	matrix->setTextColor(matrix->color565(255, 255, 255));
-	matrix->setCursor(4, 4);
-	matrix->print(applets[appletSelectedIndex].name);
-	
-    matrix->flipDMABuffer(); 
+    else if (rotationInput1 < 0)
+    {
+        rotationInput1 = 0;
+        appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, -1);
+        tvStaticTimer = millis();
+        s = NOISE;
+    }
+    return s;
 }
 
+ProgramState tvStaticLoop()
+{
+    matrix->fillScreen(backgroundColor);
+    
+    
+    for (int y = 0; y < matrix->height(); y++)
+    {
+        for (int x = 0; x < matrix->width(); x++)
+        {
+            // Use program memory byte as grayscale value
+            uint8_t grayValue = *noiseSource;
+            matrix->drawPixel(x, y, matrix->color333(grayValue, grayValue, grayValue));
 
+            // Move to the next byte, wrap around if necessary
+            noiseSource++;
+            if (noiseSource - programMemoryStart >= STATIC_MEM_RANGE)
+            {
+                noiseSource = programMemoryStart;
+            }
+        }
+    }
+    delay(20);
+    matrix->flipDMABuffer();
+    if (millis() - tvStaticTimer > TVSTATIC_INTERVAL)
+    {
+        tvStaticTimer = millis();
+        return APPLET;
+    }
+    return NOISE;
+}
 
 void setup()
 {
@@ -168,19 +180,15 @@ void setup()
 void loop()
 {
     handleOtaPeriodic();
+    state = handleSystemControls(state);
 	switch (state)
 	{
-	case MENU:
-		menuLoop();
-		break;
-	case APPLET:
-		if (buttonPressed0)
-		{
-			buttonPressed0 = false;
-			state = MENU;
-		}
-		applets[appletSelectedIndex].appletLoop();
-		break;
+        case APPLET:
+            applets[appletSelectedIndex].appletLoop();
+            break;
+        case NOISE:
+            state = tvStaticLoop();
+            break;
 	}
 }
 
