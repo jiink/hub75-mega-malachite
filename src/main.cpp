@@ -5,6 +5,7 @@
 #include "applets\phases.h"
 #include "applets\city.h"
 #include "applets\life.h"
+#include "applets\simpleClock.h"
 
 /*  Default library pin configuration for the reference
   you can redefine only ones you need later on object creation
@@ -50,7 +51,7 @@ struct AppletEntry
 // Array to store the available applets
 AppletEntry applets[MAX_APPLETS];
 uint8_t numApplets = 0;
-uint8_t appletSelectedIndex = 3;
+uint8_t appletSelectedIndex = 0;
 
 // TV static effect stuff
 #define TVSTATIC_INTERVAL 100
@@ -77,6 +78,7 @@ void addApplet(const char* name, void (*appletSetup)(void), void (*appletLoop)(v
 // Declare and define a global constructor function
 void initializeApplets()
 {
+    addApplet("Simple Clock", &simpleClockSetup, &simpleClockLoop);
     addApplet("Moving Pixel", &movingPixelSetup, &movingPixelLoop);
     addApplet("Phases", &phasesSetup, &phasesLoop);
     addApplet("City", &citySetup, &cityLoop);

@@ -412,11 +412,11 @@ void drawDigit(int digit, int x, int y, Color color)
     const uint8_t* digitData;
     if (digit < 0 || digit > 9)
     {
-        digitData = digit0;
+        digitData = DIGIT_0;
     }
     else
     {
-        digitData = digits[digit];
+        digitData = DIGITS[digit];
     }
     for (int i = 0; i < DIGIT_HEIGHT; i++)
     {

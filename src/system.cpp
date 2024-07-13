@@ -55,13 +55,17 @@ void rotaryEncoderSetup()
     const int upperBoundary = 1000000;
     const bool wrapValues = true;
 
-    rotaryEncoder0.setEncoderType(EncoderType::FLOATING); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    // This part makes me explde
+    rotaryEncoder0.setEncoderType(EncoderType::FLOATING); 
     rotaryEncoder0.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
     rotaryEncoder0.onTurned(&knob0Turned);
     rotaryEncoder0.onPressed(&knob0Pressed);
     rotaryEncoder0.begin();
+    // pinMode(ROTARY_ENCODER_0_A_PIN, INPUT);
+    // pinMode(ROTARY_ENCODER_0_B_PIN, INPUT);
+    // pinMode(ROTARY_ENCODER_0_BUTTON_PIN, INPUT);
 
-    rotaryEncoder1.setEncoderType(EncoderType::FLOATING); // TODO: See if button presses are truly more reliable with this set to EncoderType::FLOATING.
+    rotaryEncoder1.setEncoderType(EncoderType::FLOATING); 
     rotaryEncoder1.setBoundaries(lowerBoundary, upperBoundary, wrapValues);
     rotaryEncoder1.onTurned(&knob1Turned);
     rotaryEncoder1.onPressed(&knob1Pressed);
