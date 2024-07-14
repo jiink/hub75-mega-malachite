@@ -110,6 +110,7 @@ ProgramState handleSystemControls(ProgramState s)
     if (s != APPLET) { return s; }
     // Handle the rotary encoder input
     // (Don't skip any)
+    int prevSelectedIndex = appletSelectedIndex;
     if (rotationInput1 > 0)
     {
         rotationInput1 = 0;
@@ -123,6 +124,10 @@ ProgramState handleSystemControls(ProgramState s)
         appletSelectedIndex = addWrap(appletSelectedIndex, numApplets - 1, -1);
         tvStaticTimer = millis();
         s = NOISE;
+    }
+    if (prevSelectedIndex != appletSelectedIndex)
+    {
+        applets[appletSelectedIndex].appletSetup();
     }
     return s;
 }
