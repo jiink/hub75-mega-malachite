@@ -1,0 +1,155 @@
+#include <stdint.h>
+#include <pgmspace.h>
+#ifndef DIGITS_BIG_H
+#define DIGITS_BIG_H
+
+#define DIGITBIG_WIDTH  8
+#define DIGITBIG_HEIGHT 10
+
+static const uint8_t DIGITBIG_0[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b01100110,
+    0b01100110,
+    0b01100110,
+    0b01100110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_1[] PROGMEM  = {
+    0b00011000,
+    0b00111000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+};
+static const uint8_t DIGITBIG_2[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b00000110,
+    0b00001100,
+    0b00011000,
+    0b00110000,
+    0b01100000,
+    0b01111110,
+    0b01111110,
+};
+static const uint8_t DIGITBIG_3[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b00000110,
+    0b00011100,
+    0b00011100,
+    0b00000110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_4[] PROGMEM  = {
+    0b00001100,
+    0b00011100,
+    0b00011100,
+    0b00111100,
+    0b00101100,
+    0b01101100,
+    0b01111110,
+    0b01111110,
+    0b00001100,
+    0b00001100,
+};
+static const uint8_t DIGITBIG_5[] PROGMEM  = {
+    0b01111110,
+    0b01111110,
+    0b01100000,
+    0b01100000,
+    0b01111100,
+    0b01111110,
+    0b00000110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_6[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b01100000,
+    0b01111100,
+    0b01111110,
+    0b01100110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_7[] PROGMEM  = {
+    0b01111110,
+    0b01111110,
+    0b00000110,
+    0b00001100,
+    0b00001100,
+    0b00001100,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+    0b00011000,
+};
+static const uint8_t DIGITBIG_8[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b01100110,
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_9[] PROGMEM  = {
+    0b00111100,
+    0b01111110,
+    0b01100110,
+    0b01100110,
+    0b01111110,
+    0b00111110,
+    0b00000110,
+    0b01100110,
+    0b01111110,
+    0b00111100,
+};
+static const uint8_t DIGITBIG_DEGREE[] PROGMEM  = {
+    0b01110000,
+    0b11111000,
+    0b11011000,
+    0b11011000,
+    0b11111000,
+    0b01110000,
+    0b00000000,
+    0b00000000,
+    0b00000000,
+    0b00000000,
+};
+
+const uint8_t* const DIGITSBIG[] PROGMEM = {
+    DIGITBIG_0,
+    DIGITBIG_1,
+    DIGITBIG_2,
+    DIGITBIG_3,
+    DIGITBIG_4,
+    DIGITBIG_5,
+    DIGITBIG_6,
+    DIGITBIG_7,
+    DIGITBIG_8,
+    DIGITBIG_9
+};
+
+#endif

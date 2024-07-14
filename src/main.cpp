@@ -6,6 +6,7 @@
 #include "applets\city.h"
 #include "applets\life.h"
 #include "applets\simpleClock.h"
+#include "applets\weatherChannel.h"
 
 /*  Default library pin configuration for the reference
   you can redefine only ones you need later on object creation
@@ -83,6 +84,7 @@ void initializeApplets()
     addApplet("Phases", &phasesSetup, &phasesLoop);
     addApplet("City", &citySetup, &cityLoop);
     addApplet("Life", &lifeSetup, &lifeLoop);
+    addApplet("Weather Channel", &weatherChannelSetup, &weatherChannelLoop);
 	// ... Add more applets if needed
 }
 
@@ -170,6 +172,7 @@ void setup()
 	initializeApplets();
 
     connectToWifi();
+    
     synchrnoizeTime();
     Serial.println("Connected to WiFi and synchronized time.");
 

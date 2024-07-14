@@ -5,6 +5,7 @@
 		"titleBar.activeForeground": "#FEFBFA"
     },
     "files.associations": {
-        "memory": "cpp"
+        "memory": "cpp",
+        "cmath": "cpp"
     }
 }
