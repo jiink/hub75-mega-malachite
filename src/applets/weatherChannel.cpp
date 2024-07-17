@@ -2,6 +2,9 @@
 #include "weatherChannel.h"
 #include "digitsBig.h"
 #include "sprites.h"
+#include <ArduinoJson.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 enum State
 {
@@ -12,7 +15,8 @@ enum State
 enum Condition
 {
     CONDITION_CLEAR,
-    CONDITION_CLOUDY,   
+    CONDITION_CLOUDY,
+    CONDITION_ERROR, 
 };
 
 // The weather data actually displayed to the user
@@ -25,6 +29,89 @@ WeatherDisplay weatherDisplay;
 State wstate = STATE_FETCHING;
 unsigned long fetchTimer = 0;
 const uint16_t bgCol = matrix->color565(189, 234, 255);
+
+static int findMostCommonWeatherCode(int arr[], int size) {
+  int maxCount = 0;
+  int mostCommon = -1;
+  
+  for (int i = 0; i < size; i++) {
+    int count = 0;
+    
+    for (int j = 0; j < size; j++) {
+      if (arr[j] == arr[i]) {
+        count++;
+      }
+    }
+    
+    if (count > maxCount) {
+      maxCount = count;
+      mostCommon = arr[i];
+    }
+  }
+  
+  return mostCommon;
+}
+
+static Condition weatherCodeToCondition(int weatherCode)
+{
+    if (weatherCode >= 200 && weatherCode < 300)
+    {
+        return CONDITION_CLOUDY;
+    }
+    else if (weatherCode >= 300 && weatherCode < 400)
+    {
+        return CONDITION_CLEAR;
+    }
+    else
+    {
+        return CONDITION_ERROR;
+    }
+}
+
+static WeatherDisplay acquireWeatherData()
+{
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("Not connected to WiFi");
+        return {0, CONDITION_ERROR};
+    }
+    HTTPClient http;
+    // If not working, replace '/' with '%2F' in "America/Los_Angeles"
+    http.begin("https://api.open-meteo.com/v1/forecast?latitude=33.88&longitude=-117.89&hourly=weather_code&daily=temperature_2m_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=America/Los_Angeles&forecast_days=1");
+    int responseCode = http.GET();
+    if (responseCode != 200)
+    {
+        Serial.print("HTTP GET failed, error: ");
+        Serial.println(responseCode);
+        http.end();
+        return {0, CONDITION_ERROR};
+    }
+    String payload = http.getString();
+    http.end();
+    Serial.println(payload);
+    const size_t capacity = JSON_ARRAY_SIZE(24) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(5) + JSON_OBJECT_SIZE(7) + 1024;
+    DynamicJsonDocument doc(capacity);
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error)
+    {
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+        return {0, CONDITION_ERROR};
+    }
+    // Extract the temperature and weather codes
+    WeatherDisplay output;
+    output.temp = doc["daily"]["temperature_2m_max"][0];
+    // Find most common weather code in hourly report
+    JsonArray jWeatherCodes = doc["hourly"]["weather_code"];
+    int weatherCodes[24];
+    for (int i = 0; i < 24; i++)
+    {
+        weatherCodes[i] = jWeatherCodes[i];
+    }
+    int mostCommonWeatherCode = findMostCommonWeatherCode(weatherCodes, 24);
+    output.condition = weatherCodeToCondition(mostCommonWeatherCode);
+    return output;
+}
 
 // x and y are top left corner
 static void drawFrame(int x, int y, int w, int h, bool dark, bool drawBg)
@@ -108,7 +195,6 @@ static void drawNumber(int number, int x, int y, uint16_t color)
     }
 
     int numDigits = (int)log10(number) + 1; // Calculate the number of digits
-    //int startX = x - (numDigits * DIGITBIG_WIDTH + (numDigits - 1)) + 1; // Calculate the starting x position
     int startX = x;
 
     for (int i = numDigits - 1; i >= 0; --i) {
