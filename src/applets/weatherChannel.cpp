@@ -28,6 +28,7 @@ struct WeatherDisplay
 WeatherDisplay weatherDisplay;
 State wstate = STATE_FETCHING;
 unsigned long fetchTimer = 0;
+unsigned long weatherGetterTimer = 0;
 const uint16_t bgCol = matrix->color565(189, 234, 255);
 
 static int findMostCommonWeatherCode(int arr[], int size) {
@@ -210,25 +211,32 @@ static void drawTemperature(int temp, int x, int y, uint16_t color)
     drawDigitBig(10, 58, 6, color);
 }
 
-static void reset()
+static void reset(bool forceFetchNewWeatherData)
 {
     wstate = STATE_FETCHING; 
     weatherDisplay.temp = random(50, 100);
     weatherDisplay.condition = random(0, 2) == 0 ? CONDITION_CLEAR : CONDITION_CLOUDY;
     fetchTimer = millis();
+    const unsigned long millisInDay = 86400000;
+
+    if (forceFetchNewWeatherData || (millis() - weatherGetterTimer > millisInDay))
+    {
+        Serial.println("Fetching new weather data");
+        weatherDisplay = acquireWeatherData();
+        weatherGetterTimer = millis();
+    }
 }
 
 void weatherChannelSetup(void)
 {
-    // get rid of this when using actual data from internet
-    reset();
+    reset(false);
 }
 
 void weatherChannelLoop(void)
 {
     if (buttonPressed0)
     {
-        reset();
+        reset(true);
         buttonPressed0 = false;
     }
     matrix->fillScreen(bgCol);
