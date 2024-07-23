@@ -214,8 +214,8 @@ static void drawTemperature(int temp, int x, int y, uint16_t color)
 static void reset(bool forceFetchNewWeatherData)
 {
     wstate = STATE_FETCHING; 
-    weatherDisplay.temp = random(50, 100);
-    weatherDisplay.condition = random(0, 2) == 0 ? CONDITION_CLEAR : CONDITION_CLOUDY;
+    // weatherDisplay.temp = random(50, 100);
+    // weatherDisplay.condition = random(0, 2) == 0 ? CONDITION_CLEAR : CONDITION_CLOUDY;
     fetchTimer = millis();
     const unsigned long millisInDay = 86400000;
 
