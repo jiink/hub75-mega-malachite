@@ -224,6 +224,18 @@ static const uint8_t DIGITBIG_DEGREE[] PROGMEM  = {
     0b00000000,
     0b00000000,
 };
+static const uint8_t DIGITBIG_COLON[] PROGMEM  = {
+    0b00000000,
+    0b00000000,
+    0b00011000,
+    0b00011000,
+    0b00000000,
+    0b00000000,
+    0b00011000,
+    0b00011000,
+    0b00000000,
+    0b00000000,
+};
 
 const uint8_t* const DIGITSBIG[] PROGMEM = {
     DIGITBIG_0,
@@ -237,6 +249,7 @@ const uint8_t* const DIGITSBIG[] PROGMEM = {
     DIGITBIG_8,
     DIGITBIG_9
 };
+
 
 void drawDigit(int digit, int x, int y, uint16_t color);
 void draw2DigitNumber(int number, int x, int y, uint16_t color);

@@ -44,6 +44,10 @@ void drawDigitBig(int digit, int x, int y, uint16_t color)
     {
         digitData = DIGITBIG_DEGREE;
     }
+    else if (digit == 11)
+    {
+        digitData = DIGITBIG_COLON;
+    }
     else
     {
         digitData = DIGITSBIG[digit];

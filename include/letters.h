@@ -219,4 +219,7 @@ const uint8_t* const LETTERS[] PROGMEM = {
     LETTER_Z
 };
 
+void drawLetter(char letter, int x, int y, uint16_t color);
+void drawString(const char* str, size_t len, int x, int y, uint16_t color);
+
 #endif

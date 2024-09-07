@@ -61,31 +61,6 @@ static void wallclockUpdate(TimeInfo& ct)
     }
 }
 
-static void drawLetter(char letter, int x, int y, uint16_t color)
-{
-    int letterIdx = letter - 'A';
-    const uint8_t* letterData;
-    if (letterIdx < 0 || letterIdx >= NUM_LETTERS)
-    {
-        letterData = LETTER_X;
-    }
-    else
-    {
-        letterData = LETTERS[letterIdx];
-    }
-    for (int i = 0; i < LETTER_HEIGHT; i++)
-    {
-        for (int j = 0; j < LETTER_WIDTH; j++)
-        {
-            uint8_t rowBits = letterData[i];
-            if (rowBits & (1 << (LETTER_WIDTH - 1 - j)))  // Read the bits in reverse order
-            {
-                matrix->drawPixel(x + j, y + i, color);
-            }
-        }
-    }
-}
-
 static void monthNumTo2Letters(int monthNum, uint8_t& letter1, uint8_t& letter2)
 {
     if (monthNum < 1 || monthNum > 12)
