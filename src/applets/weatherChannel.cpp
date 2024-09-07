@@ -1,7 +1,7 @@
 #include "system.h"
 #include "weatherChannel.h"
-#include "digitsBig.h"
 #include "sprites.h"
+#include "digits.h"
 #include <ArduinoJson.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -160,34 +160,6 @@ static void fetchUpdate()
     drawFrameCentered(19, 15, frameW, 30, true);
 }
 
-static void drawDigitBig(int digit, int x, int y, uint16_t color)
-{
-    const uint8_t* digitData;
-    if (digit < 0 || digit > 9)
-    {
-        digitData = DIGITBIG_0;
-    }
-    if (digit == 10)
-    {
-        digitData = DIGITBIG_DEGREE;
-    }
-    else
-    {
-        digitData = DIGITSBIG[digit];
-    }
-    for (int i = 0; i < DIGITBIG_HEIGHT; i++)
-    {
-        for (int j = 0; j < DIGITBIG_WIDTH; j++)
-        {
-            uint8_t rowBits = digitData[i];
-            if (rowBits & (1 << (DIGITBIG_WIDTH - 1 - j)))  // Read the bits in reverse order
-            {
-                matrix->drawPixel(x + j, y + i, color);
-            }
-        }
-    }
-}
-
 static void drawNumber(int number, int x, int y, uint16_t color)
 {
     if (number == 0) {
@@ -217,7 +189,7 @@ static void reset(bool forceFetchNewWeatherData)
     // weatherDisplay.temp = random(50, 100);
     // weatherDisplay.condition = random(0, 2) == 0 ? CONDITION_CLEAR : CONDITION_CLOUDY;
     fetchTimer = millis();
-    const unsigned long millisInDay = 86400000;
+    const unsigned long millisInDay = 86400000; 
 
     if (forceFetchNewWeatherData || (millis() - weatherGetterTimer > millisInDay))
     {

@@ -7,6 +7,7 @@
 #include "applets\life.h"
 #include "applets\simpleClock.h"
 #include "applets\weatherChannel.h"
+#include "applets\timer.h"
 
 /*  Default library pin configuration for the reference
   you can redefine only ones you need later on object creation
@@ -85,6 +86,7 @@ void initializeApplets()
     addApplet("City", &citySetup, &cityLoop);
     addApplet("Life", &lifeSetup, &lifeLoop);
     addApplet("Weather Channel", &weatherChannelSetup, &weatherChannelLoop);
+    addApplet("Timer", &timerSetup, &timerLoop);
 	// ... Add more applets if needed
 }
 

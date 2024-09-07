@@ -61,30 +61,6 @@ static void wallclockUpdate(TimeInfo& ct)
     }
 }
 
-static void drawDigit(int digit, int x, int y, uint16_t color)
-{
-    const uint8_t* digitData;
-    if (digit < 0 || digit > 9)
-    {
-        digitData = DIGIT_0;
-    }
-    else
-    {
-        digitData = DIGITS[digit];
-    }
-    for (int i = 0; i < DIGIT_HEIGHT; i++)
-    {
-        for (int j = 0; j < DIGIT_WIDTH; j++)
-        {
-            uint8_t rowBits = digitData[i];
-            if (rowBits & (1 << (DIGIT_WIDTH - 1 - j)))  // Read the bits in reverse order
-            {
-                matrix->drawPixel(x + j, y + i, color);
-            }
-        }
-    }
-}
-
 static void drawLetter(char letter, int x, int y, uint16_t color)
 {
     int letterIdx = letter - 'A';
@@ -110,14 +86,6 @@ static void drawLetter(char letter, int x, int y, uint16_t color)
     }
 }
 
-static void draw2DigitNumber(int number, int x, int y, uint16_t color)
-{
-    int digit1 = number / 10;
-    int digit2 = number % 10;
-    drawDigit(digit1, x, y, color);
-    drawDigit(digit2, x + DIGIT_WIDTH + 1, y, color);
-}
-
 static void monthNumTo2Letters(int monthNum, uint8_t& letter1, uint8_t& letter2)
 {
     if (monthNum < 1 || monthNum > 12)
@@ -131,7 +99,6 @@ static void monthNumTo2Letters(int monthNum, uint8_t& letter1, uint8_t& letter2)
         letter2 = MONTH_LETTERS[monthNum - 1][1];
     }
 }
-
 
 static void draw2LetterMonth(int monthNum, int x, int y, uint16_t color)
 {

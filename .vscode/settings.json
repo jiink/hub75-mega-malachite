@@ -6,6 +6,10 @@
     },
     "files.associations": {
         "memory": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "system.h": "c",
+        "digits.h": "c",
+        "stdint.h": "c",
+        "esp32-hub75-matrixpanel-i2s-dma.h": "c"
     }
 }
