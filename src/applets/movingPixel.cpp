@@ -146,11 +146,7 @@ void updateDirection(){
 void movingPixelLoop(void)
 {
 	matrix->fillScreen(matrix->color333(0, 0, 0));
-
 	updateDirection();
-
 	DrawPoint({x, y}, {255, 255, 0});
-
-	//matrix->swapBuffers(true);
     matrix->flipDMABuffer();
 }
