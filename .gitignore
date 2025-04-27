@@ -4,3 +4,70 @@
 .vscode/launch.json
 .vscode/ipch
 include/wifiCredentials.h
+
+# IDF Project Specific
+build/
+sdkconfig
+sdkconfig.old
+bootloader/build/
+partition_table/build/
+components/*/build/
+managed_components/*/build/
+*.bin
+*.map
+*.elf
+*.dmp
+.config.old
+CMakeCache.txt
+compile_commands.json
+.cmake/
+
+# Common Python Generated Files
+__pycache__/
+*.pyc
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# Common OS Specific Files
+.DS_Store
+Thumbs.db
+
+# Common Editor/IDE Specific Files
+.vscode/
+.idea/
+*.iml
+*.o
+*.d
+*.s
+*.obj
+*.out
+
+# Common Logs and Temporary Files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+core.*
+*.stackdump
+
+# Common Archives
+*.zip
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+
+# Documentation Build Artifacts
+docs/_build/
+
+# If using PlatformIO
+.pioenvs/
+.piolibdeps/
+.platformio/
+
+# If using a virtual environment
+.venv/
+env/
+venv/
