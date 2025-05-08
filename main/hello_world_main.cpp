@@ -17,27 +17,7 @@
 #define ENCODER_DT_PIN  GPIO_NUM_39
 #define ENCODER_SW_PIN  GPIO_NUM_34 // switch (button)
 
-const uint64_t KNOB_DEBOUNCE_US = 15000; // for turning the knob. in microseconds
-volatile uint64_t prevKnobIsrTime = 0;
-
 MatrixPanel_I2S_DMA *matrix = nullptr;
-volatile uint8_t knobVal = 0;
-
-static void IRAM_ATTR knob_clk_falling_handler(void* arg)
-{
-    uint64_t currTime = esp_timer_get_time();
-    if ((currTime - prevKnobIsrTime) < KNOB_DEBOUNCE_US)
-    {
-        return;
-    }
-    bool dtState = gpio_get_level(ENCODER_DT_PIN);
-    if (dtState) {
-        knobVal = knobVal + 1;
-    } else {
-        knobVal = knobVal - 1;
-    }
-    prevKnobIsrTime = currTime;
-}
 
 static void drawNum(uint8_t n)
 {
@@ -62,39 +42,33 @@ extern "C" void app_main(void)
 
     gpio_config_t knob_conf = {};
     // Configure CLK pin for input and falling edge interrupt
-    knob_conf.pin_bit_mask = (1ULL << ENCODER_CLK_PIN);
+    knob_conf.pin_bit_mask = (1ULL << ENCODER_CLK_PIN)
+        | (1ULL << ENCODER_DT_PIN)
+        | (1ULL << ENCODER_SW_PIN);
     knob_conf.mode = GPIO_MODE_INPUT;
     knob_conf.pull_up_en = GPIO_PULLUP_DISABLE; // external pull-ups
     knob_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    knob_conf.intr_type = GPIO_INTR_NEGEDGE; // Trigger on falling edge
-    gpio_config(&knob_conf);
-    // DT knob pin
-    knob_conf.pin_bit_mask = (1ULL << ENCODER_DT_PIN);
     knob_conf.intr_type = GPIO_INTR_DISABLE;
     gpio_config(&knob_conf);
-    // button
-    knob_conf.pin_bit_mask = (1ULL << ENCODER_SW_PIN);
-    knob_conf.intr_type = GPIO_INTR_DISABLE;
-    gpio_config(&knob_conf);
-
-    // Interrupts
-    esp_err_t isr_err = gpio_install_isr_service(0);
-    if (isr_err != ESP_OK)
-    {
-        printf("Couldn't initialize ISR service: %d\n", isr_err);
-    }
-    esp_err_t aisr_err = gpio_isr_handler_add(ENCODER_CLK_PIN, knob_clk_falling_handler, NULL);
-    if (aisr_err != ESP_OK)
-    {
-        printf("Couldn't add ISR handler: %d\n", aisr_err);
-    }
 
     static int t = 0;
     bool btn = false;
+    uint8_t knobVal = 0;
+    bool knobClkPrev = false;
     while (true) {
         t++;
         btn = !gpio_get_level(ENCODER_SW_PIN);
-
+        bool knobClk = gpio_get_level(ENCODER_CLK_PIN);
+        bool knobClkRising = knobClk && !knobClkPrev;
+        if (knobClkRising)
+        {
+            if (gpio_get_level(ENCODER_DT_PIN)) {
+                knobVal++;
+            } else {
+                knobVal--;
+            }
+        }
+        knobClkPrev = knobClk;
         matrix->fillScreenRGB888(0, 5, 20);
         drawNum(knobVal);
         if (btn)
