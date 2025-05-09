@@ -1,6 +1,6 @@
 #pragma once
 #include "IApplet.h"
-#include "MatrixPanel_I2S_DMA.h"
+#include "ESP32-HUB75-MatrixPanel-I2S-DMA.h"
 
 class SimpleClock : public IApplet {
 public:
@@ -17,9 +17,9 @@ void SimpleClock::setup() { }
 
 void SimpleClock::loop(MatrixPanel_I2S_DMA* matrix, float dt, const InputData& inputs) {
     matrix->fillScreenRGB888(20, 5, 0);
-    matrix->drawPixelRGB888(40, 40, 0, 255, 0);
-    matrix->drawPixelRGB888(41, 41, 0, 255, 0);
-    matrix->drawPixelRGB888(40, 41, 0, 255, 0);
+    matrix->drawPixelRGB888(40, 20, 0, 255, 0);
+    matrix->drawPixelRGB888(41, 21, 0, 255, 0);
+    matrix->drawPixelRGB888(40, 21, 0, 255, 0);
     matrix->flipDMABuffer();
 }
 

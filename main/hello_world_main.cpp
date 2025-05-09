@@ -9,6 +9,8 @@
 #include "ESP32-HUB75-MatrixPanel-I2S-DMA.h"
 #include "driver/gpio.h"
 #include "esp_timer.h"
+#include "IApplet.h"
+#include "SimpleClock.h"
 
 #define WIDTH 64
 #define HEIGHT 32
@@ -18,6 +20,10 @@
 #define ENCODER_SW_PIN  GPIO_NUM_34 // switch (button)
 
 MatrixPanel_I2S_DMA *matrix = nullptr;
+
+std::array<std::unique_ptr<IApplet>, 1> applets = {
+    std::make_unique<SimpleClock>()
+};
 
 static void drawNum(uint8_t n)
 {
@@ -29,17 +35,7 @@ static void drawNum(uint8_t n)
     matrix->drawPixelRGB888(n%WIDTH, HEIGHT-1, 255, 255, 255);
 }
 
-extern "C" void app_main(void)
-{
-    printf("Hello world!\n");
-
-    HUB75_I2S_CFG mxconfig(WIDTH, HEIGHT, 1);
-    matrix = new MatrixPanel_I2S_DMA(mxconfig);
-    matrix->begin();
-    matrix->setBrightness8(80);
-    matrix->clearScreen();
-    matrix->fillScreenRGB888(100, 0, 200);
-
+static void rotaryEncoderSetup() {
     gpio_config_t knob_conf = {};
     // Configure CLK pin for input and falling edge interrupt
     knob_conf.pin_bit_mask = (1ULL << ENCODER_CLK_PIN)
@@ -50,11 +46,25 @@ extern "C" void app_main(void)
     knob_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     knob_conf.intr_type = GPIO_INTR_DISABLE;
     gpio_config(&knob_conf);
+}
+
+extern "C" void app_main(void)
+{
+    printf("**** Lapillos v0 - the ESP32 LED board ****\n");
+    HUB75_I2S_CFG mxconfig(WIDTH, HEIGHT, 1);
+    mxconfig.double_buff = true;
+    matrix = new MatrixPanel_I2S_DMA(mxconfig);
+    matrix->begin();
+    matrix->setBrightness8(80);
+
+    rotaryEncoderSetup();
 
     static int t = 0;
     bool btn = false;
     uint8_t knobVal = 0;
     bool knobClkPrev = false;
+    size_t appletIdx = 0;
+    applets[appletIdx]->setup();
     while (true) {
         t++;
         btn = !gpio_get_level(ENCODER_SW_PIN);
@@ -83,6 +93,8 @@ extern "C" void app_main(void)
         {
             matrix->drawPixelRGB888(32, 7, 0, 255, 255);
         }
+        InputData nothing;
+        applets[appletIdx]->loop(matrix, 0, nothing);
         vTaskDelay(1);
     }
 }
