@@ -82,7 +82,7 @@ extern "C" void app_main(void)
         matrix->flipDMABuffer();
         vTaskDelay(pdMS_TO_TICKS(1000/matrix->calculated_refresh_rate));
         //matrix->fillScreenRGB888(0, 5, 20);
-        drawNum(knobVal);
+        //drawNum(knobVal);
         if (btn)
         {
             //matrix->drawPixelRGB888(32, 4, 0, 255, 0);
@@ -108,7 +108,5 @@ extern "C" void app_main(void)
                 JADRAW_GREEN(color),
                 JADRAW_BLUE(color));
         }
-        
-        //vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
