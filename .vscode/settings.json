@@ -12,5 +12,9 @@
         "titleBar.activeBackground": "#008000",
         "titleBar.inactiveBackground": "#006400"
     },
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "array": "cpp",
+        "cstddef": "cpp"
+    }
 }

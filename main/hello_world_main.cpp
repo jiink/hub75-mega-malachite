@@ -11,13 +11,8 @@
 #include "esp_timer.h"
 #include "IApplet.h"
 #include "SimpleClock.h"
-
-#define WIDTH 64
-#define HEIGHT 32
-
-#define ENCODER_CLK_PIN GPIO_NUM_36
-#define ENCODER_DT_PIN  GPIO_NUM_39
-#define ENCODER_SW_PIN  GPIO_NUM_34 // switch (button)
+#include "JaDraw.h"
+#include "system.h"
 
 MatrixPanel_I2S_DMA *matrix = nullptr;
 
@@ -59,14 +54,19 @@ extern "C" void app_main(void)
 
     rotaryEncoderSetup();
 
-    static int t = 0;
+    //static int t = 0;
     bool btn = false;
     uint8_t knobVal = 0;
     bool knobClkPrev = false;
     size_t appletIdx = 0;
     applets[appletIdx]->setup();
+    int64_t last_loop_time_us = esp_timer_get_time();
+    float delta_time_sec = 0.0f;
+    static JaDraw<WIDTH, HEIGHT> canvas;
     while (true) {
-        t++;
+        int64_t current_loop_time_us = esp_timer_get_time();
+        delta_time_sec = (float)(current_loop_time_us - last_loop_time_us) / 1000000.0f;
+        last_loop_time_us = current_loop_time_us;
         btn = !gpio_get_level(ENCODER_SW_PIN);
         bool knobClk = gpio_get_level(ENCODER_CLK_PIN);
         bool knobClkRising = knobClk && !knobClkPrev;
@@ -79,22 +79,36 @@ extern "C" void app_main(void)
             }
         }
         knobClkPrev = knobClk;
-        matrix->fillScreenRGB888(0, 5, 20);
+        matrix->flipDMABuffer();
+        vTaskDelay(pdMS_TO_TICKS(1000/matrix->calculated_refresh_rate));
+        //matrix->fillScreenRGB888(0, 5, 20);
         drawNum(knobVal);
         if (btn)
         {
-            matrix->drawPixelRGB888(32, 4, 0, 255, 0);
+            //matrix->drawPixelRGB888(32, 4, 0, 255, 0);
         }
         if (!gpio_get_level(ENCODER_CLK_PIN))
         {
-            matrix->drawPixelRGB888(32, 6, 255, 255, 0);
+            //matrix->drawPixelRGB888(32, 6, 255, 255, 0);
         }
         if (!gpio_get_level(ENCODER_DT_PIN))
         {
-            matrix->drawPixelRGB888(32, 7, 0, 255, 255);
+            //matrix->drawPixelRGB888(32, 7, 0, 255, 255);
         }
         InputData nothing;
-        applets[appletIdx]->loop(matrix, 0, nothing);
-        vTaskDelay(1);
+        applets[appletIdx]->loop(canvas, delta_time_sec, nothing);
+        // transfer canvas to matrix
+        for (size_t i = 0; i < canvas.canvas.size(); i++)
+        {
+            int16_t x = i % WIDTH;
+            int16_t y = i / WIDTH;
+            auto color = canvas.canvas[i];
+            matrix->drawPixelRGB888(x, y,
+                JADRAW_RED(color),
+                JADRAW_GREEN(color),
+                JADRAW_BLUE(color));
+        }
+        
+        //vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
