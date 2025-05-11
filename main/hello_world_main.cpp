@@ -11,12 +11,16 @@
 #include "esp_timer.h"
 #include "IApplet.h"
 #include "SimpleClock.h"
+#include "Raymarch.h"
+#include "Simplex.h"
 #include "JaDraw.h"
 #include "system.h"
 
 MatrixPanel_I2S_DMA *matrix = nullptr;
 
-std::array<std::unique_ptr<IApplet>, 1> applets = {
+std::array<std::unique_ptr<IApplet>, 3> applets = {
+    std::make_unique<Simplex>(),
+    std::make_unique<Raymarch>(),
     std::make_unique<SimpleClock>()
 };
 
@@ -74,8 +78,10 @@ extern "C" void app_main(void)
         {
             if (gpio_get_level(ENCODER_DT_PIN)) {
                 knobVal++;
+                //appletIdx++;
             } else {
                 knobVal--;
+                //appletIdx--;
             }
         }
         knobClkPrev = knobClk;
