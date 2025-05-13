@@ -15,10 +15,12 @@
 #include "Simplex.h"
 #include "JaDraw.h"
 #include "system.h"
+#include "Raytrace.h"
 
 MatrixPanel_I2S_DMA *matrix = nullptr;
 
-std::array<std::unique_ptr<IApplet>, 3> applets = {
+std::array<std::unique_ptr<IApplet>, 4> applets = {
+    std::make_unique<Raytrace>(),
     std::make_unique<Simplex>(),
     std::make_unique<Raymarch>(),
     std::make_unique<SimpleClock>()

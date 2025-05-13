@@ -27,7 +27,7 @@ using vmath_hpp::fvec3;
  * @param floatColor Reference to the floating-point color structure.
  * @return 32-bit unsigned integer representing the RGBA color.
  */
-static uint32_t fvec3ToRGBA(fvec3& floatColor)
+static uint32_t fvec3ToRGBA_(fvec3& floatColor)
 {
     if (floatColor.x < 0.0f) { floatColor.x = 0.0f; }
     if (floatColor.x > 1.0f) { floatColor.x = 1.0f; }
@@ -110,7 +110,7 @@ void Raymarch::loop(JaDraw<WIDTH, HEIGHT>& canvas, float dt, const InputData& in
             static const fvec3 lightCol(1.0, 1.0, 0.8);
             color = color + diffuseIntensity * lightCol;
         }
-        canvas.drawPixel(fragCoordX, fragCoordY, fvec3ToRGBA(color));
+        canvas.drawPixel(fragCoordX, fragCoordY, fvec3ToRGBA_(color));
     }
 }
 
