@@ -84,6 +84,50 @@ static void draw2LetterMonth(int monthNum, int x, int y, uint16_t color)
     drawLetter(letter2, x + LETTER_WIDTH + 1, y, color);
 }
 
+uint16_t hsvToRgb565(float H, float S, float V) {
+    // Wrap H to [0.0, 1.0)
+    H = fmodf(H, 1.0f);
+    if (H < 0.0f) H += 1.0f;
+
+    // Scale H to [0, 360)
+    H *= 360.0f;
+
+    if (S > 100 || S < 0 || V > 100 || V < 0) {
+        return 0xFFFF; // default to white if out of range
+    }
+    float s = S / 100.0f;
+    float v = V / 100.0f;
+    float C = s * v;
+    float X = C * (1 - fabsf(fmodf(H / 60.0f, 2.0f) - 1));
+    float m = v - C;
+    float r, g, b;
+    if (H >= 0 && H < 60) {
+        r = C, g = X, b = 0;
+    }
+    else if (H >= 60 && H < 120) {
+        r = X, g = C, b = 0;
+    }
+    else if (H >= 120 && H < 180) {
+        r = 0, g = C, b = X;
+    }
+    else if (H >= 180 && H < 240) {
+        r = 0, g = X, b = C;
+    }
+    else if (H >= 240 && H < 300) {
+        r = X, g = 0, b = C;
+    }
+    else {
+        r = C, g = 0, b = X;
+    }
+    int R = (int)((r + m) * 255);
+    int G = (int)((g + m) * 255);
+    int B = (int)((b + m) * 255);
+
+    // Convert to RGB565
+    uint16_t rgb565 = ((R & 0xF8) << 8) | ((G & 0xFC) << 3) | (B >> 3);
+    return rgb565;
+}
+
 static void drawClock()
 {
     const Vector2i hourPos = { 24, 12 };
@@ -91,7 +135,8 @@ static void drawClock()
     const Vector2i monthPos = { 24, 25 };
     const Vector2i dayPos = { 34, 25 };
     const Vector2i dotsPos = { 32, 13 };
-    const uint16_t col = matrix->color565(255, 0, 0);
+    float hue = (currentTime.hour - 1) / 11.0f;
+    uint16_t col = hsvToRgb565(hue, 100.0f, 100.0f);
     draw2DigitNumber(currentTime.hour, hourPos.x, hourPos.y, col);
     draw2DigitNumber(currentTime.minute, minutePos.x, minutePos.y, col);
     draw2LetterMonth(currentTime.month, monthPos.x, monthPos.y, col);

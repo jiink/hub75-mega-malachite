@@ -7,11 +7,11 @@
 #define DIGIT_HEIGHT 5
 
 static const uint8_t DIGIT_0[] PROGMEM  = {
-    0b111,
+    0b011,
     0b101,
     0b101,
     0b101,
-    0b111
+    0b110
 };
 static const uint8_t DIGIT_1[] PROGMEM  = {
     0b010,
@@ -23,16 +23,16 @@ static const uint8_t DIGIT_1[] PROGMEM  = {
 static const uint8_t DIGIT_2[] PROGMEM  = {
     0b111,
     0b001,
-    0b111,
+    0b011,
     0b100,
     0b111
 };
 static const uint8_t DIGIT_3[] PROGMEM  = {
     0b111,
     0b001,
-    0b111,
+    0b011,
     0b001,
-    0b111
+    0b110
 };
 static const uint8_t DIGIT_4[] PROGMEM  = {
     0b101,
@@ -46,21 +46,21 @@ static const uint8_t DIGIT_5[] PROGMEM  = {
     0b100,
     0b111,
     0b001,
-    0b111
+    0b110
 };
 static const uint8_t DIGIT_6[] PROGMEM  = {
-    0b111,
+    0b011,
     0b100,
-    0b111,
+    0b110,
     0b101,
-    0b111
+    0b011
 };
 static const uint8_t DIGIT_7[] PROGMEM  = {
     0b111,
     0b001,
-    0b001,
-    0b001,
-    0b001
+    0b010,
+    0b010,
+    0b010
 };
 static const uint8_t DIGIT_8[] PROGMEM  = {
     0b111,
@@ -70,11 +70,11 @@ static const uint8_t DIGIT_8[] PROGMEM  = {
     0b111
 };
 static const uint8_t DIGIT_9[] PROGMEM  = {
-    0b111,
+    0b011,
     0b101,
     0b111,
     0b001,
-    0b111
+    0b010
 };
 const uint8_t* const DIGITS[] PROGMEM = {
     DIGIT_0,
