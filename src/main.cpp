@@ -175,7 +175,7 @@ void setup()
     mxconfig.double_buff = true;
     matrix = new MatrixPanel_I2S_DMA(mxconfig);
     matrix->begin();
-    matrix->setBrightness8(255);
+    matrix->setBrightness8(DEFAULT_BRIGHTNESS);
     rotaryEncoderSetup();
 
 	initializeApplets();

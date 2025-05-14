@@ -8,7 +8,7 @@
 #include "settingsChannel.h"
 
 // right now there's just 1 setting (brightness) so screw it
-uint8_t currentBrightness = 255;
+uint8_t currentBrightness = DEFAULT_BRIGHTNESS;
 
 void settingsChannelSetup(void)
 {

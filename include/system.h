@@ -11,7 +11,9 @@
 #define PANEL_HEIGHT 32
 #define PANELS_NUMBER 1
 #define SCREEN_W PANEL_WIDTH
+#define DEFAULT_BRIGHTNESS 127
 
+#define BUZZER_PIN 18
 // Rotary knob pins
 // #define ROTARY_CLK 23
 // #define ROTARY_DT 22
