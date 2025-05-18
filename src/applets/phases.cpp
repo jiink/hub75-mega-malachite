@@ -5,8 +5,8 @@ float pTime = 0.0f;
 float timeScale = 0.2f;
 
 int moonSize = 12; //Radius of moon in pixels
-uint16_t moonColor = matrix->color333(2, 5, 7);
-uint16_t bgColor = matrix->color333(0, 0, 0);
+uint16_t moonColor;
+uint16_t bgColor;
 
 int midX;
 int midY;
@@ -20,12 +20,8 @@ void fillEllipse (int originX, int originY, uint32_t width, uint32_t height, uin
     long long x0 = width;
     long long dx = 0;
 
-    // do the horizontal diameter
-    for (long long x = -width; x <= width; x++)
-        matrix->drawPixel(originX + x, originY, color);
-
     // now do both halves at the same time, away from the diameter
-    for (long long y = 1; y <= height; y++)
+    for (long long y = 0; y <= height; y++)
     {
         long long x1 = x0 - (dx - 1);  // try slopes of dx - 1 or more
         for ( ; x1 > 0; x1--)
@@ -78,6 +74,14 @@ void phasesSetup()
 {
     midX = matrix->width() / 2;
     midY = matrix->height() / 2;
+    if (nightMode)
+    {
+        moonColor = matrix->color333(5, 1, 0);
+        bgColor = matrix->color333(0, 0, 0);
+    } else {
+        moonColor = matrix->color333(2, 5, 7);
+        bgColor = matrix->color333(0, 0, 0);
+    }
 }
 
 

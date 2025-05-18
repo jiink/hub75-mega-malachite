@@ -15,7 +15,20 @@ static uint16_t bgCol = matrix->color333(0, 0, 0);
 
 void citySetup ()
 {
-    
+    if (nightMode)
+    {
+        col0 = matrix->color333(7, 0, 0);
+        col1 = matrix->color333(2, 3, 0);
+        col2 = matrix->color333(4, 0, 0);
+        sunCol = matrix->color333(0, 0, 0);
+        bgCol = matrix->color333(6, 0, 2);
+    } else {
+        col0 = matrix->color333(0, 1, 2);
+        col1 = matrix->color333(0, 3, 5);
+        col2 = matrix->color333(0, 5, 5);
+        sunCol = matrix->color333(7, 7, 7);
+        bgCol = matrix->color333(2, 6, 6);
+    }
 }
 
 void cityLoop ()

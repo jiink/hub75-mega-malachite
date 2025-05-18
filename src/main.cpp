@@ -177,6 +177,8 @@ void setup()
     matrix->begin();
     matrix->setBrightness8(DEFAULT_BRIGHTNESS);
     rotaryEncoderSetup();
+    pinMode(BUZZER_PIN, OUTPUT);
+    noTone(BUZZER_PIN);
 
 	initializeApplets();
 

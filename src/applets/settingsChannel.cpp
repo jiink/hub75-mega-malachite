@@ -8,7 +8,10 @@
 #include "settingsChannel.h"
 
 // right now there's just 1 setting (brightness) so screw it
-uint8_t currentBrightness = DEFAULT_BRIGHTNESS;
+uint8_t currentBrightness = 255;
+
+uint16_t bColor = 0;
+uint16_t fColor = 0xFFFF;
 
 void settingsChannelSetup(void)
 {
@@ -28,11 +31,20 @@ void settingsChannelLoop(void)
         rotationInput0 = 0;
         currentBrightness = max(currentBrightness - 16, 4);
     }
+    nightMode = currentBrightness <= 4;
+    if (nightMode)
+    {
+        bColor = matrix->color333(0, 0, 1);
+        fColor = matrix->color333(4, 0, 0);
+    } else {
+        bColor = matrix->color333(0, 2, 5);
+        fColor = matrix->color333(7, 7, 7);
+    }
     matrix->setBrightness(currentBrightness);
     // Draw
-    matrix->fillScreen(matrix->color333(0, 2, 5));
+    matrix->fillScreen(bColor);
     matrix->setCursor(0, 0);
-    matrix->setTextColor(matrix->color333(7, 7, 7));
+    matrix->setTextColor(fColor);
     char buffer[32];
     matrix->print("Settings");
     matrix->setCursor(0, 8);

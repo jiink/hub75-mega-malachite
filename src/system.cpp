@@ -18,6 +18,8 @@ volatile int rotationInput1 = 0;
 volatile bool buttonPressed0 = false;
 volatile bool buttonPressed1 = false;
 
+bool nightMode = false;
+
 static int lastEncoderValue0 = 0;
 static int lastEncoderValue1 = 0;
 

@@ -38,6 +38,8 @@ extern volatile bool buttonPressed1;
 extern volatile int rotationInput0; // Negative is CCW, positive is CW. Resets to 0 when input consumed.
 extern volatile int rotationInput1;
 
+extern bool nightMode;
+
 // Interrupts
 // void rotaryEncoderInterrupt(void);
 // void buttonInterrupt(void);

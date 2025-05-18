@@ -1,155 +1,176 @@
 #include "timer.h"
-#include "system.h" // Contains BUZZER_PIN, matrix, rotationInput0, buttonPressed0 (assumed for click handling)
+#include "system.h" // Contains BUZZER_PIN, matrix, rotationInput0, buttonPressed0
 #include "digits.h" // For draw2DigitBigNumber, drawDigitBig
 #include "letters.h"  // For drawString
 
 // --- START OF CONFIGURATION AND GLOBALS ---
 
-// MIN_TO_MS macro from 7segtimer.cpp
 #define MIN_TO_MS(x) (long)((long)x * 60L * 1000L)
 
-// Core timer variables
-long timeLeft = MIN_TO_MS(5);      // Current time remaining in milliseconds (changed from int to long)
-unsigned long startTimestamp = 0;  // For calculating elapsed time
-uint16_t digitColor;               // Initialized in setup, color for the time display
+long timeLeft = MIN_TO_MS(5);
+unsigned long startTimestamp = 0;
+uint16_t digitColor;
+uint16_t digitGreyedColor;
 
-// Display settings for LED matrix
-const int TIMER_Y_POS = 8;             // Y position for time display (from original timer.cpp)
-const int DIGIT_PAIR_WIDTH = 15;       // ASSUMED width of draw2DigitBigNumber output (e.g., "HH" or "MM")
-const int COLON_WIDTH = 3;             // ASSUMED width of drawDigitBig(11, ...) for colon
-const int TIME_DISPLAY_WIDTH = DIGIT_PAIR_WIDTH + COLON_WIDTH + DIGIT_PAIR_WIDTH; // e.g., HH:MM is 15+3+15 = 33px
-const int TIME_DISPLAY_X_OFFSET = (64 - TIME_DISPLAY_WIDTH) / 2; // Assuming 64px wide matrix for centering
+const int TIMER_Y_POS = 8;
+// Assuming draw2DigitBigNumber("00") takes 15px width, and drawDigitBig(11,...) for colon takes 3px
+const int DIGIT_PAIR_WIDTH = 15;
+const int COLON_WIDTH = 3;
+// For "HH:MM" or "MM:SS", total width is 15 (HH) + 3 (:) + 15 (MM) = 33px
+const int TIME_DISPLAY_WIDTH = DIGIT_PAIR_WIDTH + COLON_WIDTH + DIGIT_PAIR_WIDTH;
+// Center it on a 64px wide matrix: (64 - 33) / 2 = 15 (integer division)
+const int TIME_DISPLAY_X_OFFSET = (64 - TIME_DISPLAY_WIDTH) / 2;
 
-// Display mode
+
 typedef enum {
-    HOURS_MINUTES, // HH:MM
-    MINUTES_SECONDS // MM:SS
+    HOURS_MINUTES,
+    MINUTES_SECONDS
 } DisplayMode_t;
 DisplayMode_t currentDisplayMode = HOURS_MINUTES;
 
-// Alarm and sound variables
-bool silenceAlarm = true;          // True if alarm sound should be suppressed
-int lastDisplayNumComparable = 0;  // Tracks the displayed number (HHMM or MMSS) to control beeps on change
-long toneOffset = 0;               // For rising pitch alarm sound
-unsigned long toneOffsetTimer = 0; // Timer for adjusting toneOffset
-const unsigned long maxAlarmLength = MIN_TO_MS(2); // Auto-silence alarm after 2 minutes
-unsigned long alarmStartedTimestamp = 0; // Timestamp when alarm (timeLeft == 0) first started
-bool doAlarm = false;              // True if timeLeft is 0 and alarm should be active
-bool showOffMessage = false;       // True if "OFF" should be displayed (after click when timer is 0)
+bool silenceAlarm = true;
+int lastDisplayNumComparable = 0;
+long toneOffset = 0;
+unsigned long toneOffsetTimer = 0;
+const unsigned long maxAlarmLength = MIN_TO_MS(2);
+unsigned long alarmStartedTimestamp = 0;
+bool doAlarm = false;
+bool showOffMessage = false;
 
-// Assumed global from system context for button click (e.g., set by an ISR or main polling loop)
-// extern volatile bool buttonPressed0; // If not available, click logic needs to be adapted
+// extern volatile bool buttonPressed0; // Assumed from system.h or context
 
 // --- END OF CONFIGURATION AND GLOBALS ---
 
 void timerSetup(void) {
-    pinMode(BUZZER_PIN, OUTPUT);    // BUZZER_PIN is defined in system.h
-    digitColor = matrix->color565(255, 255, 255); // Set default color for digits
-
-    //timeLeft = MIN_TO_MS(5);        // Initial time
+    if (nightMode) {
+        digitColor = matrix->color565(100, 20, 50);
+        digitGreyedColor = matrix->color565(50, 0, 0);
+    } else {
+        digitColor = matrix->color565(255, 255, 255);
+        digitGreyedColor = matrix->color565(100, 20, 50);
+    }
     startTimestamp = millis();
     
-    silenceAlarm = true;            // Alarm is initially silent
+    silenceAlarm = true;
     doAlarm = false;
     showOffMessage = false;
 
-    // Determine initial display mode and lastDisplayNumComparable
+    // Initial display mode and comparable number (no change needed here)
     long hours_init = timeLeft / 3600000L;
     long minutes_init = (timeLeft % 3600000L) / 60000L;
-    long seconds_init = (timeLeft % 60000L) / 1000L;
-
     if (hours_init >= 1) {
         currentDisplayMode = HOURS_MINUTES;
         lastDisplayNumComparable = (int)(hours_init * 100 + minutes_init);
     } else {
         currentDisplayMode = MINUTES_SECONDS;
-        lastDisplayNumComparable = (int)(minutes_init * 100 + seconds_init);
+        lastDisplayNumComparable = (int)(minutes_init * 100 + ( (timeLeft % 60000L) / 1000L) );
     }
 }
 
 void timerLoop(void) {
     unsigned long currentTime = millis();
 
-    // 1. Handle Knob Input (Time Adjustment)
-    if (rotationInput0 != 0) {
-        long timeToAdjustByMs = MIN_TO_MS(1); // Default step: 1 minute
-        if (timeLeft > MIN_TO_MS(10)) {         // If > 10 min, step is 5 minutes
-            timeToAdjustByMs = MIN_TO_MS(5);
-        } else if (timeLeft < 5000L) {          // If < 5 sec, step is 1 second
-            timeToAdjustByMs = 1000L;
-        } else if (timeLeft < MIN_TO_MS(1)) {   // If < 1 min (and not < 5sec), step is 10 seconds
-            timeToAdjustByMs = 10000L;
+    // 1. Handle Knob Input (Time Adjustment) - STEP-BY-STEP PROCESSING
+    while (rotationInput0 != 0) {
+        long current_timeLeft_before_step = timeLeft; // Use for determining adjustment scale
+
+        long step_direction = 0;
+        if (rotationInput0 > 0) {
+            step_direction = 1; // Increase time
+            rotationInput0--;
+        } else { // rotationInput0 < 0
+            step_direction = -1; // Decrease time
+            rotationInput0++;
         }
 
-        long effective_increment = (long)rotationInput0;
-        if (effective_increment != 0) {
-            // Accelerated adjustment: mimics 7segtimer's `inc * abs(inc)^3`
-            // Assuming positive rotationInput0 means increase time
-            long accelerated_knob_value = effective_increment * abs(effective_increment) * abs(effective_increment) * abs(effective_increment);
-            timeLeft += timeToAdjustByMs * accelerated_knob_value;
+        // Determine timeToAdjustByMs based on timeLeft *before* this single step
+        long timeToAdjustByMs_this_step = MIN_TO_MS(1); // Default 1 minute
+        if (current_timeLeft_before_step > MIN_TO_MS(10)) {
+            timeToAdjustByMs_this_step = MIN_TO_MS(5);  // 5 minute steps if > 10 min total
+        } else if (current_timeLeft_before_step < 5000L && current_timeLeft_before_step > 0) { // between 0 and 5s (exclusive of 0 for setting)
+            timeToAdjustByMs_this_step = 1000L;         // 1 second steps
+        } else if (current_timeLeft_before_step < MIN_TO_MS(1) && current_timeLeft_before_step > 0) { // between 0 and 1m (exclusive of 0)
+             // This also covers the 5s to 1m range not caught by the previous condition
+            timeToAdjustByMs_this_step = 10000L;        // 10 second steps
         }
-        
-        rotationInput0 = 0; // Consume rotation input
-
-        if (timeLeft > 5000L) { // If time adjusted to be > 5s, ensure alarm will sound when it runs out
-            silenceAlarm = false;
+        // If timeLeft is 0 and knob is turned, default to 1-minute steps to start setting time
+        else if (current_timeLeft_before_step == 0 && step_direction > 0) {
+             timeToAdjustByMs_this_step = MIN_TO_MS(1);
         }
-        showOffMessage = false; // If time is adjusted, no longer show "OFF"
-        doAlarm = false;        // Timer is running, so alarm is off
-    }
 
-    // Clamp timeLeft: minimum 0, maximum e.g., 99h 59m
+
+        // Apply adjustment. The acceleration term (abs(inc)^3) from 7segtimer
+        // simplifies to 1 if inc is +/-1, so we just use step_direction.
+        timeLeft += timeToAdjustByMs_this_step * step_direction;
+
+        // Common logic after any successful knob adjustment for this step
+        if (timeLeft > 0) { // Only unsilence if time is actually set
+            if (timeLeft > 5000L || current_timeLeft_before_step == 0) { // Unsilence if significant time set or setting from zero
+                 silenceAlarm = false;
+            }
+            showOffMessage = false;
+            doAlarm = false;
+        }
+    } // End while (rotationInput0 != 0)
+
+
+    // Clamp timeLeft: minimum 0, maximum 99h 59m
     if (timeLeft < 0L) timeLeft = 0L;
-    if (timeLeft > MIN_TO_MS(99 * 60 + 59)) timeLeft = MIN_TO_MS(99 * 60 + 59);
+    // Max time: 99 hours, 59 minutes, 59 seconds (effectively).
+    // MIN_TO_MS(99*60 + 59) is 99h59m. Add 59 seconds for full range.
+    // if (timeLeft > (MIN_TO_MS(99L * 60L + 59L) + 59000L) ) {
+    //     timeLeft = MIN_TO_MS(99L * 60L + 59L) + 59000L;
+    // }
+
 
     // 2. Handle Button Click (Assumes 'buttonPressed0' is set by the system)
     if (buttonPressed0) {
-        if (timeLeft <= 0L) { // Only if timer has already run out
+        if (timeLeft <= 0L) {
             silenceAlarm = true;
-            showOffMessage = true; // Request to show "OFF" message
+            showOffMessage = true;
         }
-        // else: Click while timer is running could pause/resume, but not specified.
-        buttonPressed0 = false; // Consume the click event
+        buttonPressed0 = false;
     }
 
     // 3. Time Countdown
     long timeElapsed = currentTime - startTimestamp;
     
-    if (!doAlarm) { // Only count down if timer is actually running (timeLeft > 0 initially)
+    if (!doAlarm && timeLeft > 0) { // Only count down if timer is running and not already alarming
         timeLeft -= timeElapsed;
     }
     
     if (timeLeft <= 0L) {
         timeLeft = 0L;
-        if (!doAlarm) { // Transitioning to alarm state for the first time
+        if (!doAlarm) {
             doAlarm = true;
-            // If timer runs down naturally, alarm should sound unless user explicitly silenced it via "OFF"
-            if (!showOffMessage) {
+            if (!showOffMessage) { // Don't start alarm sound if "OFF" was just requested
                 silenceAlarm = false;
             }
-            toneOffset = 0; // Reset pitch offset for alarm
-            alarmStartedTimestamp = currentTime; // Log when alarm started for auto-silence
+            toneOffset = 0;
+            alarmStartedTimestamp = currentTime;
         }
-    } else { // timeLeft > 0
-        if (doAlarm) { // If it was alarming but time was added
+    } else {
+        if (doAlarm) { // If it was alarming but time was added by knob
           doAlarm = false;
-          noTone(BUZZER_PIN); // Stop alarm sound immediately
+          noTone(BUZZER_PIN);
         }
     }
+    startTimestamp = currentTime; // Update startTimestamp for next frame's elapsed calculation
+
 
     // 4. Calculate hours, minutes, seconds for display
     long hours = timeLeft / 3600000L;
     long minutes = (timeLeft % 3600000L) / 60000L;
     long seconds = (timeLeft % 60000L) / 1000L;
 
-    // 5. Determine Display Mode (HH:MM or MM:SS)
-    if (hours < 1 && timeLeft < MIN_TO_MS(60)) { // Show MM:SS if less than 1 hour total
+    // 5. Determine Display Mode (HH:MM or MM:SS) - Simplified
+    if (hours < 1) {
         currentDisplayMode = MINUTES_SECONDS;
     } else {
         currentDisplayMode = HOURS_MINUTES;
     }
 
-    // 6. Calculate currentDisplayNumComparable for beep logic (integer like HHMM or MMSS)
+    // 6. Calculate currentDisplayNumComparable for beep logic
     int currentDisplayNumComparable_now;
     if (currentDisplayMode == HOURS_MINUTES) {
         currentDisplayNumComparable_now = (int)(hours * 100 + minutes);
@@ -157,89 +178,79 @@ void timerLoop(void) {
         currentDisplayNumComparable_now = (int)(minutes * 100 + seconds);
     }
 
-    // 7. Clear screen before drawing
+    // 7. Clear screen
     matrix->fillScreen(matrix->color565(0, 0, 0));
 
-    // 8. Handle Alarm State (Sound and Visuals for timeLeft == 0)
+    // 8. Handle Alarm State or Display Time
     if (doAlarm) {
         if (silenceAlarm) {
             noTone(BUZZER_PIN);
             if (showOffMessage) {
-                // Display " OFF" - Adjust X, Y position as needed for your font/display
-                // Assuming 6px char width for drawString and 8px height
-                drawString((char*)" OFF", 4, (64 - 4*6)/2, (32-8)/2 + 4, digitColor);
+                drawString((char*)" OFF", 4, (64 - 4*6)/2, (32-8)/2 + 4, digitColor); // Adjust X,Y, font size
             } else {
-                // Alarm auto-silenced or was never started loudly; display 00:00
                 draw2DigitBigNumber(0, TIME_DISPLAY_X_OFFSET, TIMER_Y_POS, digitColor);
-                drawDigitBig(11, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH, TIMER_Y_POS, digitColor); // Colon
+                drawDigitBig(11, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH, TIMER_Y_POS, digitColor);
                 draw2DigitBigNumber(0, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH + COLON_WIDTH, TIMER_Y_POS, digitColor);
             }
         } else { // Alarm is sounding
-            // Alternating tone, similar to 7segtimer
             if ((currentTime / 50) % 2 == 0) {
                 tone(BUZZER_PIN, (unsigned int)(toneOffset + 80));
             } else {
                 tone(BUZZER_PIN, (unsigned int)(toneOffset + 80 + 96));
             }
-            // Increase pitch periodically
             if (currentTime - toneOffsetTimer >= 5000) {
                 toneOffsetTimer = currentTime;
                 toneOffset += 400;
-                if (toneOffset > 1600) {
-                    toneOffset = 0;
-                }
+                if (toneOffset > 1600) toneOffset = 0;
             }
 
-            // "TIMES UP" flashing text (adapted from original timer.cpp)
-            // Adjust X, Y position for "TIMES UP" (8 chars)
-            // Using original timer.cpp's y=16, x=4, assuming it was somewhat centered.
-            // A more calculated X: (64 - 8 * approx_char_width) / 2
             if ((currentTime % 500) < 250) {
-                matrix->fillScreen(matrix->color565(255, 255, 255)); // Flash screen white
-                drawString((char*)"TIMES UP", 8, 4, 16, matrix->color565(0,0,0)); // Black text
+                matrix->fillScreen(matrix->color565(255, 255, 255));
+                drawString((char*)"TIMES UP", 8, 4, 16, matrix->color565(0,0,0));
             } else {
-                // Screen is already black from fillScreen or previous white flash ended
-                drawString((char*)"TIMES UP", 8, 4, 16, matrix->color565(255,0,0)); // Red text
+                drawString((char*)"TIMES UP", 8, 4, 16, matrix->color565(255,0,0));
             }
 
-            // Auto-silence after maxAlarmLength
             if (currentTime - alarmStartedTimestamp > maxAlarmLength) {
                 silenceAlarm = true;
-                // showOffMessage remains false, so it will display 00:00 after auto-silence
             }
         }
-    } else { // 9. Timer Running (Not doAlarm, timeLeft > 0)
-        showOffMessage = false; // Timer is running, so not in "OFF" state
-
-        // Pre-alarm beeps, only if displayed time value changed
+    } else { // Timer Running (Not doAlarm, timeLeft > 0)
+        // Pre-alarm beeps
         if (currentDisplayNumComparable_now != lastDisplayNumComparable) {
-            if (timeLeft < 1000L && timeLeft > 0L) {        // Last second warning (e.g., 00:01 -> 00:00)
-                tone(BUZZER_PIN, 1200, 500); // freq, duration_ms
-            } else if (timeLeft < 10000L && timeLeft > 0L) { // < 10 seconds warning
+            if (timeLeft < 1000L && timeLeft > 0L) {
+                tone(BUZZER_PIN, 1200, 500);
+            } else if (timeLeft < 10000L && timeLeft > 0L) {
                 tone(BUZZER_PIN, 300, 50);
-            } else if (timeLeft < 30000L && timeLeft > 0L) { // < 30 seconds warning
+            } else if (timeLeft < 30000L && timeLeft > 0L) {
                 tone(BUZZER_PIN, 900, 10);
             } else {
-                noTone(BUZZER_PIN); // If no specific warning, ensure buzzer is off
+                noTone(BUZZER_PIN);
             }
         }
 
-        // Display Time (HH:MM or MM:SS)
+        // Display Time
+        int val1, val2;
         if (currentDisplayMode == HOURS_MINUTES) {
-            draw2DigitBigNumber((int)hours, TIME_DISPLAY_X_OFFSET, TIMER_Y_POS, digitColor);
-            drawDigitBig(11, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH, TIMER_Y_POS, digitColor); // Colon
-            draw2DigitBigNumber((int)minutes, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH + COLON_WIDTH, TIMER_Y_POS, digitColor);
+            val1 = (int)hours;
+            val2 = (int)minutes;
         } else { // MINUTES_SECONDS
-            draw2DigitBigNumber((int)minutes, TIME_DISPLAY_X_OFFSET, TIMER_Y_POS, digitColor);
-            drawDigitBig(11, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH, TIMER_Y_POS, digitColor); // Colon
-            draw2DigitBigNumber((int)seconds, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH + COLON_WIDTH, TIMER_Y_POS, digitColor);
+            val1 = (int)minutes;
+            val2 = (int)seconds;
         }
+        uint16_t hoursColor = hours > 0 ? digitColor : digitGreyedColor;
+        draw2DigitBigNumber(hours, TIME_DISPLAY_X_OFFSET - 2, TIMER_Y_POS, hoursColor); // hours
+        drawDigitBig(11, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH - 2, TIMER_Y_POS, digitGreyedColor); // Colon
+        uint16_t minutesColor = (hours == 0 && minutes == 0) ? digitGreyedColor : digitColor;
+        draw2DigitBigNumber(minutes, TIME_DISPLAY_X_OFFSET + DIGIT_PAIR_WIDTH + COLON_WIDTH + 2, TIMER_Y_POS, minutesColor); // minutes
+        uint16_t secondsColor = (hours == 0 && minutes == 0) ? digitColor : digitGreyedColor; 
+        draw2DigitNumber(seconds, 28, 23, secondsColor);
     }
 
     // 10. Flip Display Buffer
     matrix->flipDMABuffer();
 
-    // 11. Update last known values for next iteration
+    // 11. Update last known values
     lastDisplayNumComparable = currentDisplayNumComparable_now;
-    startTimestamp = currentTime; // Update startTimestamp for next frame's elapsed calculation
+    // startTimestamp is now updated right after timeElapsed calculation
 }

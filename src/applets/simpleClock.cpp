@@ -34,6 +34,7 @@ struct TimeInfo {
 
 TimeInfo currentTime = {0, 0, 0, 0, 0};
 bool dotsVisibile = true;
+float scVal = 100.0f;
 
 static unsigned long timerDiff(unsigned long a, unsigned long b)
 {
@@ -136,7 +137,7 @@ static void drawClock()
     const Vector2i dayPos = { 34, 25 };
     const Vector2i dotsPos = { 32, 13 };
     float hue = (currentTime.hour - 1) / 11.0f;
-    uint16_t col = hsvToRgb565(hue, 100.0f, 100.0f);
+    uint16_t col = hsvToRgb565(hue, 100.0f, scVal);
     draw2DigitNumber(currentTime.hour, hourPos.x, hourPos.y, col);
     draw2DigitNumber(currentTime.minute, minutePos.x, minutePos.y, col);
     draw2LetterMonth(currentTime.month, monthPos.x, monthPos.y, col);
@@ -147,6 +148,12 @@ static void drawClock()
 
 void simpleClockSetup()
 {
+    if (nightMode)
+    {
+        scVal = 50.0f;
+    } else {
+        scVal = 100.0f;
+    }
 }
 
 void simpleClockLoop()
