@@ -27,14 +27,17 @@ struct Vector2i
 struct TimeInfo {
     int month;
     int day;
-    int hour;
+    int hour24;
+    int hour12;
     int minute;
     int second;
 };
 
-TimeInfo currentTime = {0, 0, 0, 0, 0};
-bool dotsVisibile = true;
+TimeInfo currentTime = {0, 0, 0, 0, 0, 0};
 float scVal = 100.0f;
+
+static bool isDayTime = true; 
+static bool justEntered = true;
 
 static unsigned long timerDiff(unsigned long a, unsigned long b)
 {
@@ -42,9 +45,34 @@ static unsigned long timerDiff(unsigned long a, unsigned long b)
     else { return b - a; }
 }
 
+static bool isHourDay(int hour24) {
+    return (hour24 >= 7 && hour24 < 22);
+}
+
+static void checkDayNightTransition(int hour24)
+{
+    bool shouldBeDay = isHourDay(hour24);
+    if (shouldBeDay != isDayTime)
+    {
+        isDayTime = shouldBeDay;
+        if (isDayTime)
+        {
+            nightMode = false;
+            scVal = 100.0f;
+            matrix->setBrightness(50);
+        }
+        else
+        {
+            nightMode = true;
+            scVal = 50.0f;
+            matrix->setBrightness(4);
+        }
+    }
+}
+
 static void wallclockUpdate(TimeInfo& ct)
 {
-    const unsigned long WALLCLOCK_UPDATE_INTERVAL = 10000;
+    const unsigned long WALLCLOCK_UPDATE_INTERVAL = 20000;
     static unsigned long wallclockUpdateTimer = 0;
     if (timerDiff(millis(), wallclockUpdateTimer) > WALLCLOCK_UPDATE_INTERVAL)
     {
@@ -54,11 +82,11 @@ static void wallclockUpdate(TimeInfo& ct)
         tm* localTime = localtime(&now);
         ct.month = localTime->tm_mon + 1;
         ct.day = localTime->tm_mday;
-        ct.hour = localTime->tm_hour % 12;
+        ct.hour24 = localTime->tm_hour;
+        ct.hour12 = localTime->tm_hour % 12;
         ct.minute = localTime->tm_min;
         ct.second = localTime->tm_sec;
-
-        dotsVisibile = !dotsVisibile;
+        checkDayNightTransition(ct.hour24);
     }
 }
 
@@ -136,9 +164,9 @@ static void drawClock()
     const Vector2i monthPos = { 24, 25 };
     const Vector2i dayPos = { 34, 25 };
     const Vector2i dotsPos = { 32, 13 };
-    float hue = (currentTime.hour - 1) / 11.0f;
+    float hue = ((currentTime.hour24 * 60.0f) + currentTime.minute) / 1440.0f;
     uint16_t col = hsvToRgb565(hue, 100.0f, scVal);
-    draw2DigitNumber(currentTime.hour, hourPos.x, hourPos.y, col);
+    draw2DigitNumber(currentTime.hour12, hourPos.x, hourPos.y, col);
     draw2DigitNumber(currentTime.minute, minutePos.x, minutePos.y, col);
     draw2LetterMonth(currentTime.month, monthPos.x, monthPos.y, col);
     draw2DigitNumber(currentTime.day, dayPos.x, dayPos.y, col);
@@ -154,6 +182,13 @@ void simpleClockSetup()
     } else {
         scVal = 100.0f;
     }
+    justEntered = true;
+    time_t now;
+    time(&now);
+    tm* localTime = localtime(&now);
+    int currentHour = localTime->tm_hour;
+    isDayTime = isHourDay(currentHour);
+    checkDayNightTransition(currentHour);
 }
 
 void simpleClockLoop()
@@ -161,8 +196,14 @@ void simpleClockLoop()
     // Update ----------------------
     wallclockUpdate(currentTime);
 
-    // Draw ------------------------
-    matrix->fillScreen(matrix->color565(0, 0, 0));
-    drawClock();
-    matrix->flipDMABuffer();
+    static int lastMin = -1;
+    if (justEntered || (currentTime.minute != lastMin))
+    {
+        justEntered = false;
+        lastMin = currentTime.minute;
+        // Draw ------------------------
+        matrix->fillScreen(matrix->color565(0, 0, 0));
+        drawClock();
+        matrix->flipDMABuffer();
+    }
 }
